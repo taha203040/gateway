@@ -1,0 +1,20 @@
+services:
+  nginx:
+    build: ./nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - auth-service
+      - product-service
+
+  auth-service:
+    build: ./auth-service
+    expose:
+      - "3000"
+    env_file: ./auth-service/.env
+
+  product-service:
+    build: ./product-service
+    expose:
+      - "4000"         # NOT exposed to host, only nginx can reach it
+    env_file: ./product-service/.env
