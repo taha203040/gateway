@@ -1,20 +1,49 @@
 services:
   nginx:
-    build: ./nginx
+    build: 
+      context: ./gateway
+      dockerfile: Dockerfile.dev
+    # image: nginx
     ports:
       - "80:80"
     depends_on:
       - auth-service
-      - product-service
+      - checkout-service
+    container_name: nginx
 
   auth-service:
-    build: ./auth-service
+    container_name: auth
+    build: 
+      context : ./auth
+      dockerfile: Dockerfile.dev
+    # image: auth
     expose:
       - "3000"
-    env_file: ./auth-service/.env
+    # env_file: ./auth/.env
+    develop:
+      watch:
+        - path: ./auth/package.*.json
+          target: ./app
+          action: rebuild
+        - path: ./auth
+          target: /app
+          action: sync
+  checkout-service:
+  
+    container_name: checkout
+    build: 
+      context:  ./checkout
+      dockerfile: Dockerfile.dev
 
-  product-service:
-    build: ./product-service
+    # image: checkout
     expose:
       - "4000"         # NOT exposed to host, only nginx can reach it
-    env_file: ./product-service/.env
+    # env_file: ./checkout/.env
+    develop:
+      watch:
+        - path: ./checkout/package.*.json
+          target: ./app
+          action: rebuild
+        - path: ./checkout
+          target: /app
+          action: sync
