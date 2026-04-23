@@ -1,7 +1,16 @@
 FROM openresty/openresty:alpine
 
+# Install luarocks + lua-resty-jwt
+RUN apk add --no-cache luarocks \
+  && luarocks install lua-resty-jwt
+
+# Copy nginx config
 COPY nginx.conf /usr/local/openresty/nginx/conf/nginx.conf
 
-EXPOSE 80
+# Copy Lua scripts
+COPY lua/ /etc/nginx/lua/
 
-CMD ["/usr/local/openresty/bin/openresty", "-g", "daemon off;"]
+# Copy public key (never private.pem)
+COPY keys/public.pem /etc/nginx/keys/public.pem
+
+EXPOSE 80
