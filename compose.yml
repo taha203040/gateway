@@ -1,16 +1,25 @@
 services:
-  nginx:
-    build: 
-      context: ./gateway
-      dockerfile: Dockerfile.dev
-    # image: nginx
+  kong:
+    image: kong
+    volumes:
+      - "./gateway/config:/usr/local/kong/declarative"
+    #  - "./logs/file.log:/file.log"
+    environment:
+      - KONG_DATABASE=off
+      - KONG_DECLARATIVE_CONFIG=/usr/local/kong/declarative/kong.yml
+      - KONG_PROXY_ACCESS_LOG=/dev/stdout
+      - KONG_ADMIN_ACCESS_LOG=/dev/stdout
+      - KONG_PROXY_ERROR_LOG=/dev/stderr
+      - KONG_ADMIN_ERROR_LOG=/dev/stderr
+      - KONG_ADMIN_LISTEN=0.0.0.0:8001, 0.0.0.0:8444 ssl
+      - KONG_LOG_LEVEL=debug
+      - KONG_PLUGINS=bundled
     ports:
-      - "80:80"
-    depends_on:
-      - auth-service
-      - checkout-service
-    container_name: nginx
-
+      - "8000:8000/tcp"
+      - "127.0.0.1:7990:8001/tcp"
+      - "8001:8001/tcp"
+      - "8443:8443/tcp"
+      - "127.0.0.1:8444:8444/tcp" 
   auth-service:
     container_name: auth
     build: 
@@ -29,7 +38,6 @@ services:
           target: /app
           action: sync
   checkout-service:
-  
     container_name: checkout
     build: 
       context:  ./checkout
@@ -69,6 +77,21 @@ services:
       - MONGO_INITDB_ROOT_USERNAME=admin
       - MONGO_INITDB_ROOT_PASSWORD=1234
 
+  frontend:
+    container_name: frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    develop:
+      watch:
+        - path: ./frontend/package.*.json
+          target: /app
+          action: rebuild
+        - path: ./frontend
+          target: /app
+          action: sync
 volumes:
   mongodb_auth_data:
   mongodb_checkout_data:
