@@ -55,27 +55,27 @@ services:
         - path: ./checkout
           target: /app
           action: sync
-  mongo-auth:
-    image: mongo:latest
-    container_name: mongodb
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb_auth_data:/data/db
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=1234
+  # mongo-auth:
+  #   image: mongo:latest
+  #   container_name: mongodb
+  #   ports:
+  #     - "27017:27017"
+  #   volumes:
+  #     - mongodb_auth_data:/data/db
+  #   environment:
+  #     - MONGO_INITDB_ROOT_USERNAME=admin
+  #     - MONGO_INITDB_ROOT_PASSWORD=1234
 
-  mongodb-checkout:
-    image: mongo:latest
-    container_name: mongodb-checkout
-    ports:
-      - "27018:27017"
-    volumes:
-      - mongodb_checkout_data:/data/db
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=1234
+  # mongodb-checkout:
+  #   image: mongo:latest
+  #   container_name: mongodb-checkout
+  #   ports:
+  #     - "27018:27017"
+  #   volumes:
+  #     - mongodb_checkout_data:/data/db
+  #   environment:
+  #     - MONGO_INITDB_ROOT_USERNAME=admin
+  #     - MONGO_INITDB_ROOT_PASSWORD=1234
 
   frontend:
     container_name: frontend
@@ -83,7 +83,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.dev
     ports:
-      - "5173:5173"
+      - "3000:3000"
     develop:
       watch:
         - path: ./frontend/package.*.json
