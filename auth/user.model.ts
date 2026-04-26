@@ -1,5 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose'
 import bcrypt from 'bcrypt'
+import { NextFunction } from 'express'
 
 // ── Types ─────────────────────────────────────────────
 export interface IUser extends Document {
@@ -34,13 +35,12 @@ const userSchema = new Schema<IUser>(
 )
 
 // ── Hash password before saving ───────────────────────
-userSchema.pre('save', async function (next) {
+userSchema.pre('save', async function () {
   // Only hash if the password field was modified
-  if (!this.isModified('password')) return next()
+  if (!this.isModified('password')) return 
 
   const SALT_ROUNDS = 10
   this.password = await bcrypt.hash(this.password, SALT_ROUNDS)
-  next()
 })
 
 // ── Instance method: verify a plain password ──────────

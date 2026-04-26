@@ -19,7 +19,7 @@ app.get('/', (req, res) => {
 // Order routes
 app.use('/api/orders', orderRoutes)
 
-const PORT = process.env.PORT || 4000
+const PORT = process.env.PORT || 2000
 app.listen(PORT, () => {
     console.log(`Server listening on port ${PORT}`)
 })

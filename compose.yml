@@ -16,18 +16,20 @@ services:
       - KONG_PLUGINS=bundled
     ports:
       - "8000:8000/tcp"
-      - "127.0.0.1:7990:8001/tcp"
-      - "8001:8001/tcp"
-      - "8443:8443/tcp"
-      - "127.0.0.1:8444:8444/tcp" 
+      # - "127.0.0.1:7990:8001/tcp"
+      # - "8001:8001/tcp"
+      # - "8443:8443/tcp"
+      # - "127.0.0.1:8444:8444/tcp" 
   auth-service:
     container_name: auth
     build: 
       context : ./auth
       dockerfile: Dockerfile.dev
+    depends_on :
+      - mongo-auth
     # image: auth
-    expose:
-      - "3000"
+    ports:
+      - "3000:3000"
     # env_file: ./auth/.env
     develop:
       watch:
@@ -42,10 +44,11 @@ services:
     build: 
       context:  ./checkout
       dockerfile: Dockerfile.dev
-
+    depends_on :
+      -  mongodb-checkout
     # image: checkout
-    expose:
-      - "4000"         # NOT exposed to host, only nginx can reach it
+    ports:
+      - "2000:2000"         # NOT exposed to host, only nginx can reach it
     # env_file: ./checkout/.env
     develop:
       watch:
@@ -55,27 +58,27 @@ services:
         - path: ./checkout
           target: /app
           action: sync
-  # mongo-auth:
-  #   image: mongo:latest
-  #   container_name: mongodb
-  #   ports:
-  #     - "27017:27017"
-  #   volumes:
-  #     - mongodb_auth_data:/data/db
-  #   environment:
-  #     - MONGO_INITDB_ROOT_USERNAME=admin
-  #     - MONGO_INITDB_ROOT_PASSWORD=1234
+  mongo-auth:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_auth_data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=1234
 
-  # mongodb-checkout:
-  #   image: mongo:latest
-  #   container_name: mongodb-checkout
-  #   ports:
-  #     - "27018:27017"
-  #   volumes:
-  #     - mongodb_checkout_data:/data/db
-  #   environment:
-  #     - MONGO_INITDB_ROOT_USERNAME=admin
-  #     - MONGO_INITDB_ROOT_PASSWORD=1234
+  mongodb-checkout:
+    image: mongo:latest
+    container_name: mongodb-checkout
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodb_checkout_data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=1234
 
   frontend:
     container_name: frontend
@@ -83,7 +86,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.dev
     ports:
-      - "3000:3000"
+      - "5173:5173"
     develop:
       watch:
         - path: ./frontend/package.*.json

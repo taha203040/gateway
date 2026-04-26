@@ -2,7 +2,10 @@ import mongoose from 'mongoose';
 
 const connectDB = async (): Promise<void> => {
     try {
-        const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/checkout';
+        const mongoURI =
+            process.env.MONGO_URI ||
+            'mongodb://admin:1234@mongodb-checkout:27017/checkout?authSource=admin';
+
         await mongoose.connect(mongoURI);
         console.log('MongoDB connected successfully');
     } catch (error) {

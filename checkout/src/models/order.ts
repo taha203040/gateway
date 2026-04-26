@@ -1,3 +1,4 @@
+import { NextFunction } from 'express';
 import mongoose, { Document, Schema } from 'mongoose';
 
 // Order item subdocument
@@ -155,7 +156,7 @@ const orderSchema = new Schema<IOrder>(
 );
 
 // Calculate total price before saving
-orderSchema.pre<IOrder>('save', function (next) {
+orderSchema.pre<IOrder>('save', function () {
   if (this.isModified('items') || this.isModified('taxPrice') || this.isModified('shippingPrice')) {
     const itemsPrice = this.items.reduce(
       (acc, item) => acc + item.price * item.quantity,
@@ -163,7 +164,6 @@ orderSchema.pre<IOrder>('save', function (next) {
     );
     this.totalPrice = Number((itemsPrice + this.taxPrice + this.shippingPrice).toFixed(2));
   }
-  next();
 });
 
 // Indexes for efficient querying
