@@ -1,11 +1,11 @@
-import express     from 'express'
-import mongoose    from 'mongoose'
-import dotenv      from 'dotenv'
-import authRouter  from './auth.routes'
+import express from 'express'
+import mongoose from 'mongoose'
+import dotenv from 'dotenv'
+import authRouter from './auth.routes'
 
 dotenv.config()
 
-const app  = express()
+const app = express()
 const PORT = process.env.PORT || 3000
 
 // ── Middleware ────────────────────────────────────────
@@ -26,7 +26,7 @@ async function start() {
   try {
     await mongoose.connect(process.env.MONGO_URI as string)
     console.log('[db] connected to mongodb')
-    
+
     app.listen(PORT, () => {
       console.log(`[server] auth-service running on port ${PORT}`)
     })
@@ -35,5 +35,9 @@ async function start() {
     process.exit(1)
   }
 }
-
+app.get('/', (req: Request, res: Response) => {
+  res.status(200).json({ msg: "hello world" })
+}
+)
 start()
+
