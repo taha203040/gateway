@@ -7,6 +7,15 @@ services:
         paths :
           - /echo
 plugins:
+- name: request-termination
+  config: 
+    status_code: 403
+#    message: So long and thanks for all the fish!
+    body: "{a:b}"
+    content_type: "application/json; charset=utf-8"
+    trigger: "q"
+  enabled: false
+
 - name: cors
   config:
     origins:
