@@ -15,10 +15,10 @@ app.use(express.json())
 app.use(authRouter)
 
 // ── Global error handler ──────────────────────────────
-app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error('[error]', err.message)
-  res.status(500).json({ error: 'internal server error' })
-})
+// app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+//   console.error('[error]', err.message)
+//   res.status(500).json({ error: 'internal server error' })
+// })
 
 // ── Connect to MongoDB then start server ──────────────
 console.log(process.env.MONGO_URI)
@@ -35,9 +35,13 @@ async function start() {
     process.exit(1)
   }
 }
-app.get('/', (req: Request, res: Response) => {
-  res.status(200).json({ msg: "hello world" })
+app.get('/', (req, res) => {
+  res.json({ msg: "hello world" })
 }
 )
+
+
+
+
 start()
 

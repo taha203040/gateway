@@ -1,86 +1,45 @@
-_format_version : "2.1"
-services: 
-  - name : echo-server
-    url: http://localhost:8000
-    routes :
-      - name : echo
-        paths :
-          - /echo
-plugins:
-- name: request-termination
-  config: 
-    status_code: 403
-#    message: So long and thanks for all the fish!
-    body: "{a:b}"
-    content_type: "application/json; charset=utf-8"
-    trigger: "q"
-  enabled: false
+_format_version: "3.0"
 
-- name: cors
-  config:
-    origins:
-    - 'https://youtube.com'
-    methods:
-    - GET
-    - POST
-    headers:
-    - Accept
-    - Accept-Version
-    - Content-Length
-    - Content-MD5
-    - Content-Type
-    - Date
-    - X-Auth-Token
-    - Authorization
-    exposed_headers:
-    - X-Auth-Token
-    credentials: true
-    max_age: 3600
-    preflight_continue: false
-- name: rate-limiting
-  config: 
-#    second: 5
-    hour: 100
-    policy: local
-    fault_tolerant: true
-    hide_client_headers: false
-    redis_ssl: false
-    redis_ssl_verify: false
-# comment these if you don't want to store rate limiting data in redis
-#    policy: redis
-#    redis_host: 172.27.59.36
-#    redis_password: example
+services:
 
-- name: ip-restriction
-  config:
-    deny:
-      - 203.0.113.1
-      - 192.0.2.0/24
-      # - 172.18.0.1
-    message: cannot access
-    status : 401
-- name: bot-detection
-  config:
-    allow: 
-    deny: 
-      - "curl"
+  # =========================
+  # FRONTEND
+  # =========================
+  - name: frontend-service
+    url: http://host.docker.internal:5173
 
-- name: proxy-cache
-  config:
-      response_code:
-      - 200
-      request_method:
-      - GET
-      content_type:
-      - text/plain
-      - application/json
-      cache_ttl: 300
-      strategy: memory
-consumers:
-  - custom_id: '1234'
-    username: jjjj
-    tags:
-    - silver-tier
-# - name: basic-auth
-#   config:
-#       anonymous: anonymous
+    routes:
+      - name: frontend-route
+        paths:
+          - /
+        strip_path: false
+
+  # =========================
+  # AUTH SERVICE
+  # =========================
+  - name: auth-service
+    url: http://host.docker.internal:3000
+
+    routes:
+      - name: auth-route
+        paths:
+          - /api/auth
+        strip_path: true
+
+  # =========================
+  # CHECKOUT SERVICE
+  # =========================
+  - name: checkout-service
+    url: http://host.docker.internal:4000
+
+    routes:
+      - name: checkout-route
+        paths:
+          - /api/checkout
+        strip_path: true
+# Usage: Save this as kong.yml (or declarative config) and apply with:
+# curl -i -X POST http://localhost:8001/config \
+#   -H "Content-Type: application/json" \
+#   -d @kong.yml
+# Or run Kong with: KONG_DATABASE=off kong start --conf kong.conf
+# Ensure Kong Gateway or a compatible API gateway is running.
