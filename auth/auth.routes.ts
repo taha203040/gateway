@@ -4,7 +4,7 @@ import { signup } from './signup.middleware'
 
 const authRouter = Router()
 
-authRouter.post('/api/login',  login)
-authRouter.post('/api/signup', signup)
+authRouter.post('/login',  login)
+authRouter.post('/signup', signup)
 
 export default authRouter
