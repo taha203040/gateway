@@ -1,0 +1,20 @@
+# Gateway
+
+A simple API gateway implementation.
+
+## Features
+
+- Route requests to backend services
+- Request/response transformation
+- Rate limiting
+- Authentication & authorization
+- Logging & monitoring
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (>= 14.x)
+- npm or yarn
+
+### Installation
