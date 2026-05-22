@@ -2,9 +2,6 @@ _format_version: "3.0"
 
 services:
 
-  # =========================
-  # FRONTEND
-  # =========================
   - name: frontend-service
     url: http://host.docker.internal:5173
 
@@ -13,33 +10,38 @@ services:
         paths:
           - /
         strip_path: false
-
-  # =========================
-  # AUTH SERVICE
-  # =========================
+# ------------------------------------------
   - name: auth-service
     url: http://host.docker.internal:3000
+    plugins:
+      - name: ip-restriction
+        config:
+          block:
+            - 10.0.0.0/8        # VPC / pod network
+            - 172.16.0.0/12     # Docker bridge
+            - 192.168.0.0/16    # local dev
+      - name: request-termination
+        config:
+          status_code: 401
+          message: '"Error - Authentication required"'
 
     routes:
       - name: auth-route
         paths:
           - /api/auth
         strip_path: true
-
-  # =========================
-  # CHECKOUT SERVICE
-  # =========================
+# ------------------------------------------
   - name: checkout-service
     url: http://host.docker.internal:4000
-
+    plugins:
+      - name: ip-restriction
+        config:
+          allow:
+            - 10.0.0.0/8        # VPC / pod network
+            - 172.16.0.0/12     # Docker bridge
+            # - 192.168.0.0/16    # local dev
     routes:
       - name: checkout-route
         paths:
           - /api/checkout
         strip_path: true
-# Usage: Save this as kong.yml (or declarative config) and apply with:
-# curl -i -X POST http://localhost:8001/config \
-#   -H "Content-Type: application/json" \
-#   -d @kong.yml
-# Or run Kong with: KONG_DATABASE=off kong start --conf kong.conf
-# Ensure Kong Gateway or a compatible API gateway is running.
