@@ -13,18 +13,7 @@ services:
 # ------------------------------------------
   - name: auth-service
     url: http://host.docker.internal:3000
-    plugins:
-      - name: ip-restriction
-        config:
-          block:
-            - 10.0.0.0/8        # VPC / pod network
-            - 172.16.0.0/12     # Docker bridge
-            - 192.168.0.0/16    # local dev
-      - name: request-termination
-        config:
-          status_code: 401
-          message: '"Error - Authentication required"'
-
+    
     routes:
       - name: auth-route
         paths:
@@ -33,15 +22,32 @@ services:
 # ------------------------------------------
   - name: checkout-service
     url: http://host.docker.internal:4000
-    plugins:
-      - name: ip-restriction
-        config:
-          allow:
-            - 10.0.0.0/8        # VPC / pod network
-            - 172.16.0.0/12     # Docker bridge
-            # - 192.168.0.0/16    # local dev
     routes:
       - name: checkout-route
         paths:
           - /api/checkout
         strip_path: true
+#-------------------------------------------
+plugins:
+      - name: ip-restriction
+        config:
+          allow:
+            - 10.0.0.0/8        # VPC / pod network
+            - 172.16.0.0/12     # Docker bridge
+            - 192.168.0.0/16    # local dev
+      # - name: request-termination
+      #   config:
+      #     status_code: 401
+      #     message: '"Error - Authentication required"'
+      - name: request-transformer
+        config:
+           remove:
+              headers:
+                - X-Admin-Override       # client trying to fake admin
+                - X-Internal-Request     # client trying to fake internal
+                - Authorization   
+           add:
+              headers:
+              - X-Gateway-Source:kong        # upstream checks this exists
+              - X-Internal-Request:true
+      - name : request-termination

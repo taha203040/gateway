@@ -10,7 +10,12 @@ connectDB()
 // Middleware
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
-
+app.use((req, res, next) => {
+  if (!req.headers['x-gateway-source']) {
+    return res.status(403).json({ error: 'Direct access not allowed' })
+  }
+  next()
+})
 // Routes
 app.get('/', (req, res) => {
     res.send('Server is running')

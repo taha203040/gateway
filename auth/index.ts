@@ -6,22 +6,14 @@ import authRouter from './auth.routes'
 dotenv.config()
 
 const app = express()
-const PORT = process.env.PORT || 3000
+const PORT = process.env.PORT
 
 // ── Middleware ────────────────────────────────────────
 app.use(express.json())
-
 // ── Routes ────────────────────────────────────────────
-app.use(authRouter)
+// app.use('/v1',authRouter)
+app.use('/v2',authRouter)
 
-// ── Global error handler ──────────────────────────────
-// app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-//   console.error('[error]', err.message)
-//   res.status(500).json({ error: 'internal server error' })
-// })
-
-// ── Connect to MongoDB then start server ──────────────
-console.log(process.env.MONGO_URI)
 async function start() {
   try {
     await mongoose.connect(process.env.MONGO_URI as string)
@@ -35,13 +27,14 @@ async function start() {
     process.exit(1)
   }
 }
+app.use((req, res, next) => {
+  if (!req.headers['x-gateway-source']) {
+    return res.status(403).json({ error: 'Direct access not allowed' })
+  }
+  next()
+})
 app.get('/', (req, res) => {
   res.json({ msg: "hello world" })
 }
 )
-
-
-
-
 start()
-
