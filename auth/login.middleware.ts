@@ -36,7 +36,7 @@ export async function login(
     // ── Issue tokens ──────────────────────────────────
     //@ts-ignore
 
-    const payload = { userId: user._id.toString(), email: user.email, role: 'user' }
+    const payload = { userId: user._id.toString(), email: user.email, role: 'user' ,iss:'YJdmaDvVTJxtcWRCvkMikc8oELgAVNcz' }
 
     res.status(200).json({
       message: 'login successful',

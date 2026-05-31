@@ -27,12 +27,12 @@ async function start() {
     process.exit(1)
   }
 }
-app.use((req, res, next) => {
-  if (!req.headers['x-gateway-source']) {
-    return res.status(403).json({ error: 'Direct access not allowed' })
-  }
-  next()
-})
+// app.use((req, res, next) => {
+//   if (!req.headers['x-gateway-source']) {
+//     return res.status(403).json({ error: 'Direct access not allowed' })
+//   }
+//   next()
+// })
 app.get('/', (req, res) => {
   res.json({ msg: "hello world" })
 }

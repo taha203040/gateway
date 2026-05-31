@@ -31,12 +31,12 @@ export async function signup(
 
     // ── Issue tokens ──────────────────────────────────
     //@ts-ignore
-    const payload = { userId: user._id.toString(), email: user.email, role: 'user' }
+    const payload = { userId: user._id.toString(), email: user.email, role: 'user'  ,iss:"auth-ser"}
 
     res.status(201).json({
       message      : 'account created',
       accessToken  : signAccessToken(payload),
-      refreshToken : signRefreshToken(payload),
+      // refreshToken : signRefreshToken(payload),
     })
   } catch (err) {
     next(err)

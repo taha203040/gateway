@@ -1,6 +1,8 @@
 services:
   kong:
     image: kong
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - "./gateway/config:/usr/local/kong/declarative"
       -  "./gateway/logs/file.log:/file.log"
