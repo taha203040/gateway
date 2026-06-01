@@ -97,6 +97,16 @@ services:
         - path: ./frontend
           target: /app
           action: sync
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
 volumes:
+  redis_data:
   mongodb_auth_data:
   mongodb_checkout_data:

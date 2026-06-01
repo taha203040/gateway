@@ -47,23 +47,36 @@ services:
           cache_ttl: 300
 # Global plugins
 plugins:
-  - name: ip-restriction
+  - name: kong-session-manager
+    enabled: true
     config:
-      allow:
-        - 10.0.0.0/8
-        - 172.16.0.0/12
-        - 192.168.0.0/16
-      deny : []
-  - name: request-transformer
-    config:
-      remove:
-        headers:
-          - X-Admin-Override
-          - X-Internal-Request
-      add:
-        headers:
-          - X-Gateway-Source:kong
-          - X-Internal-Request:false
+      redis:
+      host: redis.internal
+      port: 6379
+      timeout: 1000
+      keepalive_pool_size: 256
+      checks:
+      - type: blacklist
+        enabled: true
+        key_template: "blacklist:jwt:{{ .Claims.jti }}"
+        reject_message: "Token has been revoked"
+  # - name: ip-restriction
+  #   config:
+  #     allow:
+  #       - 10.0.0.0/8
+  #       - 172.16.0.0/12
+  #       - 192.168.0.0/16
+  #     deny : []
+  # - name: request-transformer
+  #   config:
+  #     remove:
+  #       headers:
+  #         - X-Admin-Override
+  #         - X-Internal-Request
+  #     add:
+  #       headers:
+  #         - X-Gateway-Source:kong
+  #         - X-Internal-Request:false
   - name: jwt
     enabled: true
     config:
