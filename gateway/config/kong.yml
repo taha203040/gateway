@@ -9,7 +9,9 @@ services:
         paths:
           - /
         strip_path: false
-
+    plugins:
+      - name: jwt
+        enabled: false  
   - name: auth-service
     url: http://host.docker.internal:3000
     # url: http://localhost:3000
@@ -18,7 +20,9 @@ services:
         paths:
           - /api/auth
         strip_path: true
-
+    plugins:
+      - name: jwt
+        enabled: false  
   - name: checkout-service
     url: http://host.docker.internal:4000
     # url: http://localhost:4000
@@ -29,7 +33,18 @@ services:
         strip_path: true
     plugins:
       - name: jwt
-
+        enabled: true
+        config:
+          secret_is_base64: false
+          claims_to_verify:
+            - exp
+            # - nbf
+          maximum_expiration: 86400
+          key_claim_name: "iss"
+          header_names: ["Authorization"]
+          cookie_names: ["token"]
+          anonymous: null
+          cache_ttl: 300
 # Global plugins
 plugins:
   - name: ip-restriction
@@ -38,7 +53,7 @@ plugins:
         - 10.0.0.0/8
         - 172.16.0.0/12
         - 192.168.0.0/16
-
+      deny : []
   - name: request-transformer
     config:
       remove:
@@ -48,11 +63,40 @@ plugins:
       add:
         headers:
           - X-Gateway-Source:kong
-          - X-Internal-Request:true
+          - X-Internal-Request:false
+  - name: jwt
+    enabled: true
+    config:
+      claims_to_verify: ["exp"]
+      anonymous: null
+      cache_ttl: 300
+    # EXCLUDE auth-service and frontend
+      service: null  # Apply to all, then override
+  # Override - disable JWT for auth-service
+  - name: jwt
+    service: auth-service
+    enabled: false
+
+  # Override - disable JWT for frontend
+  - name: jwt
+    service: frontend-service
+    enabled: false
 
 consumers:
-  - username: jsmith
+  - username: web-app
     jwt_secrets:
       - algorithm: HS256
-        key: YJdmaDvVTJxtcWRCvkMikc8oELgAVNcz
+        key: web-key
         secret: C50k0bcahDhLNhLKSUBSR1OMiFGzNZ7X
+        
+  - username: mobile-app
+    jwt_secrets:
+      - algorithm: HS256
+        key: mobile-key
+        secret: ${MOBILE_JWT_SECRET}   # Use environment variable
+        
+  - username: admin
+    jwt_secrets:
+      - algorithm: HS256
+        key: admin-key
+        secret: ${ADMIN_JWT_SECRET}
