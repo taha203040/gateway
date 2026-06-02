@@ -32,6 +32,21 @@ services:
           - /api/checkout
         strip_path: true
     plugins:
+      - name: jwt-blacklist
+        enabled: true
+        # config:
+          # redis_host: redis
+          # redis_port: 6379
+          # redis_password: ${REDIS_PASSWORD}
+          # redis_database: 0
+          # redis_timeout: 1000
+          # redis_keepalive_pool_size: 256
+          # redis_keepalive_max_idle_timeout: 10000
+          # blacklist_key_prefix: "blacklist:jwt:"
+          # jti_claim: "jti"
+          # reject_status: 401
+          # reject_message: "Token has been revoked"
+          # fail_open: false
       - name: jwt
         enabled: true
         config:
@@ -47,19 +62,6 @@ services:
           cache_ttl: 300
 # Global plugins
 plugins:
-  - name: kong-session-manager
-    enabled: true
-    config:
-      redis:
-      host: redis.internal
-      port: 6379
-      timeout: 1000
-      keepalive_pool_size: 256
-      checks:
-      - type: blacklist
-        enabled: true
-        key_template: "blacklist:jwt:{{ .Claims.jti }}"
-        reject_message: "Token has been revoked"
   # - name: ip-restriction
   #   config:
   #     allow:

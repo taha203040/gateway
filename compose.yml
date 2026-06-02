@@ -1,21 +1,22 @@
 services:
   kong:
-    image: kong
+    build : ./gateway
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+    - "host.docker.internal:host-gateway"
     volumes:
-      - "./gateway/config:/usr/local/kong/declarative"
-      -  "./gateway/logs/file.log:/file.log"
+    - "./gateway/config:/usr/local/kong/declarative"
+    - "./gateway/logs/file.log:/file.log"
+    # no plugin volume mount needed
     environment:
-      - KONG_DATABASE=off
-      - KONG_DECLARATIVE_CONFIG=/usr/local/kong/declarative/kong.yml
-      - KONG_PROXY_ACCESS_LOG=/dev/stdout
-      - KONG_ADMIN_ACCESS_LOG=/dev/stdout
-      - KONG_PROXY_ERROR_LOG=/dev/stderr
-      - KONG_ADMIN_ERROR_LOG=/dev/stderr
-      - KONG_ADMIN_LISTEN=0.0.0.0:8001, 0.0.0.0:8444 ssl
-      - KONG_LOG_LEVEL=debug
-      - KONG_PLUGINS=bundled
+    - KONG_DATABASE=off
+    - KONG_DECLARATIVE_CONFIG=/usr/local/kong/declarative/kong.yml
+    - KONG_PLUGINS=bundled,jwt-blacklist
+    - KONG_PROXY_ACCESS_LOG=/dev/stdout
+    - KONG_ADMIN_ACCESS_LOG=/dev/stdout
+    - KONG_PROXY_ERROR_LOG=/dev/stderr
+    - KONG_ADMIN_ERROR_LOG=/dev/stderr
+    - KONG_ADMIN_LISTEN=0.0.0.0:8001, 0.0.0.0:8444 ssl
+    - KONG_LOG_LEVEL=debug
     ports:
       - "8000:8000/tcp"
       # - "127.0.0.1:7990:8001/tcp"
