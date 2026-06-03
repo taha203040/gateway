@@ -9,7 +9,9 @@ services:
         paths:
           - /
         strip_path: false
-
+    plugins:
+      - name: jwt
+        enabled: false  
   - name: auth-service
     url: http://host.docker.internal:3000
     # url: http://localhost:3000
@@ -18,7 +20,9 @@ services:
         paths:
           - /api/auth
         strip_path: true
-
+    plugins:
+      - name: jwt
+        enabled: false  
   - name: checkout-service
     url: http://host.docker.internal:4000
     # url: http://localhost:4000
@@ -28,88 +32,86 @@ services:
           - /api/checkout
         strip_path: true
     plugins:
+      - name: jwt-blacklist
+        enabled: true
+        # config:
+          # redis_host: redis
+          # redis_port: 6379
+          # redis_password: ${REDIS_PASSWORD}
+          # redis_database: 0
+          # redis_timeout: 1000
+          # redis_keepalive_pool_size: 256
+          # redis_keepalive_max_idle_timeout: 10000
+          # blacklist_key_prefix: "blacklist:jwt:"
+          # jti_claim: "jti"
+          # reject_status: 401
+          # reject_message: "Token has been revoked"
+          # fail_open: false
       - name: jwt
-
+        enabled: true
+        config:
+          secret_is_base64: false
+          claims_to_verify:
+            - exp
+            # - nbf
+          maximum_expiration: 86400
+          key_claim_name: "iss"
+          header_names: ["Authorization"]
+          cookie_names: ["token"]
+          anonymous: null
+          cache_ttl: 300
 # Global plugins
 plugins:
+  # - name: ip-restriction
+  #   config:
+  #     allow:
+  #       - 10.0.0.0/8
+  #       - 172.16.0.0/12
+  #       - 192.168.0.0/16
+  #     deny : []
+  # - name: request-transformer
+  #   config:
+  #     remove:
+  #       headers:
+  #         - X-Admin-Override
+  #         - X-Internal-Request
+  #     add:
+  #       headers:
+  #         - X-Gateway-Source:kong
+  #         - X-Internal-Request:false
+  - name: jwt
+    enabled: true
+    config:
+      claims_to_verify: ["exp"]
+      anonymous: null
+      cache_ttl: 300
+    # EXCLUDE auth-service and frontend
+      service: null  # Apply to all, then override
+  # Override - disable JWT for auth-service
+  - name: jwt
+    service: auth-service
+    enabled: false
 
-  - name: rate-limiting-advanced
-    consumer_group: Free
-    config:
-      limit:
-      - 3
-      window_size:
-      - 30
-      window_type: fixed
-      retry_after_jitter_max: 0
-      namespace: free
-      strategy: redis
-      redis:
-        host: ${{ env "DECK_REDIS_HOST" }}
-        port: 6379
-        password: ${{ env "DECK_REDIS_PASSWORD" }}
+  # Override - disable JWT for frontend
+  - name: jwt
+    service: frontend-service
+    enabled: false
 
-  - name: rate-limiting-advanced
-    consumer_group: Basic
-    config:
-      limit:
-      - 5
-      window_size:
-      - 30
-      window_type: sliding
-      retry_after_jitter_max: 0
-      namespace: basic
-      strategy: redis
-      redis:
-        host: ${{ env "DECK_REDIS_HOST" }}
-        port: 6379
-        password: ${{ env "DECK_REDIS_PASSWORD" }}
-
-  - name: rate-limiting-advanced
-    consumer_group: Premium
-    config:
-      limit:
-      - 10
-      window_size:
-      - 30
-      window_type: sliding
-      retry_after_jitter_max: 0
-      namespace: premium
-      strategy: redis
-      redis:
-        host: ${{ env "DECK_REDIS_HOST" }}
-        port: 6379
-        password: ${{ env "DECK_REDIS_PASSWORD" }}
-
-  - name: ip-restriction
-    config:
-      allow:
-        - 10.0.0.0/8
-        - 172.16.0.0/12
-        - 192.168.0.0/16
-
-  - name: request-transformer
-    config:
-      remove:
-        headers:
-          - X-Admin-Override
-          - X-Internal-Request
-      add:
-        headers:
-          - X-Gateway-Source:kong
-          - X-Internal-Request:true
-  - name: rate-limiting
-    config:
-      minute: 5
-      houre : 100
-      policy: local
 consumers:
-  - username: jsmith
+  - username: web-app
     jwt_secrets:
       - algorithm: HS256
-        key: YJdmaDvVTJxtcWRCvkMikc8oELgAVNcz
+        key: web-key
         secret: C50k0bcahDhLNhLKSUBSR1OMiFGzNZ7X
-consumer_groups:
-  - name: FREE
-  - name: PREMUIM
-  - name: ENTERPRIZE
+        
+  - username: mobile-app
+    jwt_secrets:
+      - algorithm: HS256
+        key: mobile-key
+        secret: ${MOBILE_JWT_SECRET}   # Use environment variable
+        
+  - username: admin
+    jwt_secrets:
+      - algorithm: HS256
+        key: admin-key
+        secret: ${ADMIN_JWT_SECRET}
