@@ -17,6 +17,7 @@ export interface TokenPayload {
   email: string
   role: string
   iss: string
+  tier:string
 }
 
 // ── Sign an access token (short-lived) ───────────────

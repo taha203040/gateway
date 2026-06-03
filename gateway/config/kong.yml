@@ -49,7 +49,11 @@ plugins:
         headers:
           - X-Gateway-Source:kong
           - X-Internal-Request:true
-
+  - name: rate-limiting
+    config:
+      minute: 5
+      houre : 100
+      policy: local
 consumers:
   - username: jsmith
     jwt_secrets:
