@@ -32,6 +32,55 @@ services:
 
 # Global plugins
 plugins:
+
+  - name: rate-limiting-advanced
+    consumer_group: Free
+    config:
+      limit:
+      - 3
+      window_size:
+      - 30
+      window_type: fixed
+      retry_after_jitter_max: 0
+      namespace: free
+      strategy: redis
+      redis:
+        host: ${{ env "DECK_REDIS_HOST" }}
+        port: 6379
+        password: ${{ env "DECK_REDIS_PASSWORD" }}
+
+  - name: rate-limiting-advanced
+    consumer_group: Basic
+    config:
+      limit:
+      - 5
+      window_size:
+      - 30
+      window_type: sliding
+      retry_after_jitter_max: 0
+      namespace: basic
+      strategy: redis
+      redis:
+        host: ${{ env "DECK_REDIS_HOST" }}
+        port: 6379
+        password: ${{ env "DECK_REDIS_PASSWORD" }}
+
+  - name: rate-limiting-advanced
+    consumer_group: Premium
+    config:
+      limit:
+      - 10
+      window_size:
+      - 30
+      window_type: sliding
+      retry_after_jitter_max: 0
+      namespace: premium
+      strategy: redis
+      redis:
+        host: ${{ env "DECK_REDIS_HOST" }}
+        port: 6379
+        password: ${{ env "DECK_REDIS_PASSWORD" }}
+
   - name: ip-restriction
     config:
       allow:
@@ -60,3 +109,7 @@ consumers:
       - algorithm: HS256
         key: YJdmaDvVTJxtcWRCvkMikc8oELgAVNcz
         secret: C50k0bcahDhLNhLKSUBSR1OMiFGzNZ7X
+consumer_groups:
+  - name: FREE
+  - name: PREMUIM
+  - name: ENTERPRIZE
