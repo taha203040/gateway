@@ -1,12 +1,14 @@
 import mongoose, { Document, Schema } from 'mongoose'
 import bcrypt from 'bcrypt'
-import { NextFunction } from 'express'
 
 // ── Types ─────────────────────────────────────────────
 export interface IUser extends Document {
-  username : string
-  email    : string
-  password : string
+  username: string
+  email: string
+  password: string
+  role: string
+  iss: string
+  tier: string
   comparePassword(candidate: string): Promise<boolean>
 }
 
@@ -14,22 +16,29 @@ export interface IUser extends Document {
 const userSchema = new Schema<IUser>(
   {
     username: {
-      type     : String,
-      required : true,
-      trim     : true,
-      unique   : true,
+      type: String,
+      required: true,
+      trim: true,
+      unique: true,
     },
     email: {
-      type      : String,
-      required  : true,
-      lowercase : true,
-      trim      : true,
-      unique    : true,
+      type: String,
+      required: true,
+      lowercase: true,
+      trim: true,
+      unique: true,
     },
     password: {
-      type     : String,
-      required : true,
+      type: String,
+      required: true,
     },
+    role: {
+      type: String,
+      required: true,
+    }, iss: {
+      type: String,
+      required: true
+    }
   },
   { timestamps: true }
 )
@@ -37,7 +46,7 @@ const userSchema = new Schema<IUser>(
 // ── Hash password before saving ───────────────────────
 userSchema.pre('save', async function () {
   // Only hash if the password field was modified
-  if (!this.isModified('password')) return 
+  if (!this.isModified('password')) return
 
   const SALT_ROUNDS = 10
   this.password = await bcrypt.hash(this.password, SALT_ROUNDS)

@@ -1,7 +1,6 @@
 _format_version: "3.0"
 
 services:
-
   - name: frontend-service
     url: http://host.docker.internal:5173
     routes:
@@ -11,10 +10,10 @@ services:
         strip_path: false
     plugins:
       - name: jwt
-        enabled: false  
+        enabled: false
+
   - name: auth-service
     url: http://host.docker.internal:3000
-    # url: http://localhost:3000
     routes:
       - name: auth-route
         paths:
@@ -22,96 +21,101 @@ services:
         strip_path: true
     plugins:
       - name: jwt
-        enabled: false  
+        enabled: false
+
   - name: checkout-service
     url: http://host.docker.internal:4000
-    # url: http://localhost:4000
     routes:
       - name: checkout-route
         paths:
           - /api/checkout
         strip_path: true
     plugins:
-      - name: jwt-blacklist
-        enabled: true
-        # config:
-          # redis_host: redis
-          # redis_port: 6379
-          # redis_password: ${REDIS_PASSWORD}
-          # redis_database: 0
-          # redis_timeout: 1000
-          # redis_keepalive_pool_size: 256
-          # redis_keepalive_max_idle_timeout: 10000
-          # blacklist_key_prefix: "blacklist:jwt:"
-          # jti_claim: "jti"
-          # reject_status: 401
-          # reject_message: "Token has been revoked"
-          # fail_open: false
       - name: jwt
         enabled: true
         config:
           secret_is_base64: false
           claims_to_verify:
             - exp
-            # - nbf
           maximum_expiration: 86400
           key_claim_name: "iss"
           header_names: ["Authorization"]
-          cookie_names: ["token"]
           anonymous: null
-          cache_ttl: 300
-# Global plugins
-plugins:
-  # - name: ip-restriction
-  #   config:
-  #     allow:
-  #       - 10.0.0.0/8
-  #       - 172.16.0.0/12
-  #       - 192.168.0.0/16
-  #     deny : []
-  # - name: request-transformer
-  #   config:
-  #     remove:
-  #       headers:
-  #         - X-Admin-Override
-  #         - X-Internal-Request
-  #     add:
-  #       headers:
-  #         - X-Gateway-Source:kong
-  #         - X-Internal-Request:false
-  - name: jwt
-    enabled: true
-    config:
-      claims_to_verify: ["exp"]
-      anonymous: null
-      cache_ttl: 300
-    # EXCLUDE auth-service and frontend
-      service: null  # Apply to all, then override
-  # Override - disable JWT for auth-service
-  - name: jwt
-    service: auth-service
-    enabled: false
 
-  # Override - disable JWT for frontend
-  - name: jwt
-    service: frontend-service
-    enabled: false
+  - name: my-inventory
+    url: http://host.docker.internal:5000
+    routes:
+      - name: inventory-route
+        paths:
+          - /api/inventory
+        strip_path: true
+    plugins:
+      - name: jwt
+        enabled: true
+        config:
+          secret_is_base64: false
+          claims_to_verify:
+            - exp
+          maximum_expiration: 86400
+          key_claim_name: "iss"
+          header_names: ["Authorization"]
+          anonymous: null
+      - name: acl
+        enabled: true
+        config:
+          allow:
+            - ADMIN
+          hide_groups_header: true
+
+  - name: my-orders
+    url: http://host.docker.internal:5001
+    routes:
+      - name: orders-route
+        paths:
+          - /api/orders
+        strip_path: true
+    plugins:
+      - name: jwt
+        enabled: true
+        config:
+          secret_is_base64: false
+          claims_to_verify:
+            - exp
+          maximum_expiration: 86400
+          key_claim_name: "iss"
+          header_names: ["Authorization"]
+          anonymous: null
+      - name: acl
+        enabled: true
+        config:
+          allow:
+            - ADMIN
+            - WEB
+          hide_groups_header: true
 
 consumers:
-  - username: web-app
+  - username: admin-consumer
     jwt_secrets:
       - algorithm: HS256
-        key: web-key
-        secret: C50k0bcahDhLNhLKSUBSR1OMiFGzNZ7X
-        
-  - username: mobile-app
+        key: https://auth.myapp.com/admin
+        secret: YOUR_JWT_SIGNING_SECRET
+    acls:
+      - group: ADMIN
+
+  - username: user-web-consumer
     jwt_secrets:
       - algorithm: HS256
-        key: mobile-key
-        secret: ${MOBILE_JWT_SECRET}   # Use environment variable
-        
-  - username: admin
+        key: https://auth.myapp.com/user/web
+        secret: YOUR_JWT_SIGNING_SECRET
+    acls:
+      - group: USER
+      - group: WEB
+
+  - username: user-mobile-consumer
     jwt_secrets:
       - algorithm: HS256
-        key: admin-key
-        secret: ${ADMIN_JWT_SECRET}
+        key: https://auth.myapp.com/user/mobile
+        secret: YOUR_JWT_SIGNING_SECRET
+    acls:
+      - group: USER
+      - group: MOBILE

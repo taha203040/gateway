@@ -10,18 +10,19 @@ export async function login(
   next: NextFunction
 ): Promise<void> {
   try {
-    const { email, password } = req.body
-
-    // ── Validate required fields ──────────────────────
-    if (!email || !password) {
-      res.status(400).json({ error: 'email and password are required' })
-      return
+    const ISS_MAP = {
+      ADMIN: 'https://auth.myapp.com/admin',
+      USER_WEB: 'https://auth.myapp.com/user/web',
+      USER_MOBILE: 'https://auth.myapp.com/user/mobile',
     }
 
-    // ── Find user by email ────────────────────────────
+    // ── Validate required fields ──────────────────────
+    const { email, password } = req.body
+    const userAgent = req.headers['user-agent'] || ''
+
+    // ── Check if user exists ──────────────────────────
     const user = await User.findOne({ email })
     if (!user) {
-      // Use a generic message — don't reveal which field is wrong
       res.status(401).json({ error: 'invalid credentials' })
       return
     }
@@ -33,11 +34,29 @@ export async function login(
       return
     }
 
+    // ── Determine platform from User-Agent ────────────
+    const isMobile = /Mobile|Android|iPhone|iPad|iPod/i.test(userAgent)
+
+    // ── Determine iss key based on role and platform ──
+    let issKey: keyof typeof ISS_MAP
+    if (user.role === 'ADMIN') {
+      issKey = 'ADMIN'
+    } else {
+      issKey = isMobile ? 'USER_MOBILE' : 'USER_WEB'
+    }
+
+    // ── Create JWT payload ────────────────────────────
+    const payload = {
+      userId: user._id.toString(),
+      email: user.email,
+      role: user.role,
+      iss: ISS_MAP[issKey],
+      tier: user.tier,
+      jti: crypto.randomUUID(), // Required for blacklist
+      iat: Math.floor(Date.now() / 1000),
+    }
+
     // ── Issue tokens ──────────────────────────────────
-    //@ts-ignore
-
-    const payload = { userId: user._id.toString(), email: user.email, role: 'user', iss: 'YJdmaDvVTJxtcWRCvkMikc8oELgAVNcz', tier: "" }
-
     res.status(200).json({
       message: 'login successful',
       accessToken: signAccessToken(payload),

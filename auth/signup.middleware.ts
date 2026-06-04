@@ -5,9 +5,9 @@ import { signAccessToken, signRefreshToken } from './token.service'
 // ── POST /api/signup ──────────────────────────────────
 // Creates a new user and returns access + refresh tokens
 export async function signup(
-  req  : Request,
-  res  : Response,
-  next : NextFunction
+  req: Request,
+  res: Response,
+  next: NextFunction
 ): Promise<void> {
   try {
     const { username, email, password } = req.body
@@ -31,11 +31,10 @@ export async function signup(
 
     // ── Issue tokens ──────────────────────────────────
     //@ts-ignore
-    const payload = { userId: user._id.toString(), email: user.email, role: 'user'  ,iss:"auth-ser"}
+    const payload = { userId: user._id.toString(), email: user.email, role: 'user', iss: "auth-ser", tier: "FREE" }
 
     res.status(201).json({
-      message      : 'account created',
-      accessToken  : signAccessToken(payload),
+      message: 'account created',
       // refreshToken : signRefreshToken(payload),
     })
   } catch (err) {
