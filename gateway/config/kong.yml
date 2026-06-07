@@ -1,121 +1,101 @@
 _format_version: "3.0"
+_transform: true
 
+# ─────────────────────────────────────────
+# Services
+# ─────────────────────────────────────────
 services:
-  - name: frontend-service
-    url: http://host.docker.internal:5173
-    routes:
-      - name: frontend-route
-        paths:
-          - /
-        strip_path: false
-    plugins:
-      - name: jwt
-        enabled: false
-
   - name: auth-service
-    url: http://host.docker.internal:3000
-    routes:
-      - name: auth-route
-        paths:
-          - /api/auth
-        strip_path: true
-    plugins:
-      - name: jwt
-        enabled: false
+    url: http://auth-svc:3000
+    connect_timeout: 5000
+    read_timeout: 10000
+    write_timeout: 10000
+    tags: [auth]
 
-  - name: checkout-service
-    url: http://host.docker.internal:4000
-    routes:
-      - name: checkout-route
-        paths:
-          - /api/checkout
-        strip_path: true
-    plugins:
-      - name: jwt
-        enabled: true
-        config:
-          secret_is_base64: false
-          claims_to_verify:
-            - exp
-          maximum_expiration: 86400
-          key_claim_name: "iss"
-          header_names: ["Authorization"]
-          anonymous: null
+  - name: inventory-service
+    url: http://inventory-svc:3001
+    connect_timeout: 5000
+    read_timeout: 10000
+    write_timeout: 10000
+    tags: [inventory]
 
-  - name: my-inventory
-    url: http://host.docker.internal:5000
-    routes:
-      - name: inventory-route
-        paths:
-          - /api/inventory
-        strip_path: true
-    plugins:
-      - name: jwt
-        enabled: true
-        config:
-          secret_is_base64: false
-          claims_to_verify:
-            - exp
-          maximum_expiration: 86400
-          key_claim_name: "iss"
-          header_names: ["Authorization"]
-          anonymous: null
-      - name: acl
-        enabled: true
-        config:
-          allow:
-            - ADMIN
-          hide_groups_header: true
+  - name: order-service
+    url: http://order-svc:3002
+    connect_timeout: 5000
+    read_timeout: 10000
+    write_timeout: 10000
+    tags: [order]
 
-  - name: my-orders
-    url: http://host.docker.internal:5001
-    routes:
-      - name: orders-route
-        paths:
-          - /api/orders
-        strip_path: true
-    plugins:
-      - name: jwt
-        enabled: true
-        config:
-          secret_is_base64: false
-          claims_to_verify:
-            - exp
-          maximum_expiration: 86400
-          key_claim_name: "iss"
-          header_names: ["Authorization"]
-          anonymous: null
-      - name: acl
-        enabled: true
-        config:
-          allow:
-            - ADMIN
-            - WEB
-          hide_groups_header: true
-
-consumers:
-  - username: admin-consumer
-    jwt_secrets:
-      - algorithm: HS256
-        key: https://auth.myapp.com/admin
-        secret: YOUR_JWT_SIGNING_SECRET
-    acls:
-      - group: ADMIN
-
-  - username: user-web-consumer
-    jwt_secrets:
-      - algorithm: HS256
-        key: https://auth.myapp.com/user/web
-        secret: YOUR_JWT_SIGNING_SECRET
-    acls:
-      - group: USER
-      - group: WEB
-
-  - username: user-mobile-consumer
-    jwt_secrets:
-      - algorithm: HS256
-        key: https://auth.myapp.com/user/mobile
-        secret: YOUR_JWT_SIGNING_SECRET
-    acls:
-      - group: USER
-      - group: MOBILE
+# ─────────────────────────────────────────
+# Routes
+# ─────────────────────────────────────────
+routes:
+  # Auth — public routes (no JWT plugin)
+  - name: auth-login
+    service: auth-service
+    paths: [/auth/login]
+    methods: [POST]
+    strip_path: false
+    tags: [auth, public]
+ 
+  - name: auth-refresh
+    service: auth-service
+    paths: [/auth/refresh]
+    methods: [POST]
+    strip_path: false
+    tags: [auth, public]
+ 
+  - name: auth-logout
+    service: auth-service
+    paths: [/auth/logout]
+    methods: [POST]
+    strip_path: false
+    tags: [auth, protected]
+  - name: inventory-list
+    service: inventory-service
+    paths: [/items]
+    methods: [GET]
+    strip_path: false
+    tags: [inventory, protected]
+ 
+  - name: inventory-create
+    service: inventory-service
+    paths: [/items]
+    methods: [POST]
+    strip_path: false
+    tags: [inventory, protected]
+ 
+  - name: inventory-item
+    service: inventory-service
+    paths: [/items/{id}]
+    methods: [GET, PATCH, DELETE]
+    strip_path: false
+    tags: [inventory, protected]
+  - name: inventory-stock
+    service: inventory-service
+    paths: [~/items/:[^/]+/stock]
+    methods: [PATCH]
+    strip_path: false
+    tags: [inventory, protected]
+ 
+  # Order — protected routes
+  - name: order-create
+    service: order-service
+    paths: [/orders]
+    methods: [POST]
+    strip_path: false
+    tags: [order, protected]
+ 
+  - name: order-list
+    service: order-service
+    paths: [/orders]
+    methods: [GET]
+    strip_path: false
+    tags: [order, protected]
+ 
+  - name: order-item
+    service: order-service
+    paths: [~/orders/[^/]+$]
+    methods: [GET, PATCH, DELETE]
+    strip_path: false
+    tags: [order, protected]
