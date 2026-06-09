@@ -31,53 +31,70 @@ services:
 # ─────────────────────────────────────────
 routes:
   # Auth — public routes (no JWT plugin)
+  - name: auth-register
+    service: auth-service
+    paths: [/auth/register]
+    methods: [POST]
+    strip_path: false
+    tags: [auth, public]
+
   - name: auth-login
     service: auth-service
     paths: [/auth/login]
     methods: [POST]
     strip_path: false
     tags: [auth, public]
- 
+
   - name: auth-refresh
     service: auth-service
     paths: [/auth/refresh]
     methods: [POST]
     strip_path: false
     tags: [auth, public]
- 
+
   - name: auth-logout
     service: auth-service
     paths: [/auth/logout]
     methods: [POST]
     strip_path: false
     tags: [auth, protected]
+
+  - name: auth-verify
+    service: auth-service
+    paths: [/auth/verify]
+    methods: [GET]
+    strip_path: false
+    tags: [auth, protected]
+
+  # Inventory — protected routes
   - name: inventory-list
     service: inventory-service
     paths: [/items]
     methods: [GET]
     strip_path: false
     tags: [inventory, protected]
- 
+
   - name: inventory-create
     service: inventory-service
     paths: [/items]
     methods: [POST]
     strip_path: false
     tags: [inventory, protected]
- 
+
   - name: inventory-item
     service: inventory-service
-    paths: [/items/{id}]
+    paths: [~/items/[^/]+$]
     methods: [GET, PATCH, DELETE]
     strip_path: false
     tags: [inventory, protected]
+
   - name: inventory-stock
     service: inventory-service
-    paths: [~/items/:[^/]+/stock]
+    paths: [~/items/[^/]+/stock]
     methods: [PATCH]
     strip_path: false
     tags: [inventory, protected]
- 
+
   # Order — protected routes
   - name: order-create
     service: order-service
@@ -85,17 +102,125 @@ routes:
     methods: [POST]
     strip_path: false
     tags: [order, protected]
- 
+
   - name: order-list
     service: order-service
     paths: [/orders]
     methods: [GET]
     strip_path: false
     tags: [order, protected]
- 
+
   - name: order-item
     service: order-service
     paths: [~/orders/[^/]+$]
     methods: [GET, PATCH, DELETE]
     strip_path: false
     tags: [order, protected]
+
+# ─────────────────────────────────────────
+# Consumers (user tiers for rate limiting)
+# ─────────────────────────────────────────
+
+# ─────────────────────────────────────────
+# 1. Consumers — one per user tier
+#    Each holds the RS256 public key Kong
+#    uses to verify tokens minted by your
+#    auth service.
+# ─────────────────────────────────────────
+consumers:
+  - username: free-tier
+    tags: [tier-free]
+    jwt_secrets:
+      - key: free-tier-issuer       # must match the "iss" claim in your JWT
+        algorithm: RS256
+        rsa_public_key: |
+          -----BEGIN PUBLIC KEY-----
+          <paste your RS256 public key here>
+          -----END PUBLIC KEY-----
+
+  - username: paid-tier
+    tags: [tier-paid]
+    jwt_secrets:
+      - key: paid-tier-issuer
+        algorithm: RS256
+        rsa_public_key: |
+          -----BEGIN PUBLIC KEY-----
+          <paste your RS256 public key here>
+          -----END PUBLIC KEY-----
+
+# ─────────────────────────────────────────
+# 2. JWT plugin — inventory routes
+# ─────────────────────────────────────────
+plugins:
+  - name: jwt
+    route: inventory-list          # GET /items
+    config:
+      claims_to_verify: [exp]      # reject expired tokens
+      key_claim_name: iss          # Kong looks up consumer by "iss" value
+      cookie_names: []             # Bearer token only, no cookie fallback
+      header_names:
+        - Authorization            # expects: Authorization: Bearer <token>
+      anonymous: ~                 # null = no anonymous passthrough; 401 if missing
+
+  - name: jwt
+    route: inventory-create        # POST /items
+    config:
+      claims_to_verify: [exp]
+      key_claim_name: iss
+      cookie_names: []
+      header_names:
+        - Authorization
+      anonymous: ~
+
+  - name: jwt
+    route: inventory-item          # GET|PATCH|DELETE /items/:id
+    config:
+      claims_to_verify: [exp]
+      key_claim_name: iss
+      cookie_names: []
+      header_names:
+        - Authorization
+      anonymous: ~
+
+  - name: jwt
+    route: inventory-stock         # PATCH /items/:id/stock
+    config:
+      claims_to_verify: [exp]
+      key_claim_name: iss
+      cookie_names: []
+      header_names:
+        - Authorization
+      anonymous: ~
+
+# ─────────────────────────────────────────
+# 3. JWT plugin — order routes
+# ─────────────────────────────────────────
+  - name: jwt
+    route: order-create            # POST /orders
+    config:
+      claims_to_verify: [exp]
+      key_claim_name: iss
+      cookie_names: []
+      header_names:
+        - Authorization
+      anonymous: ~
+
+  - name: jwt
+    route: order-list              # GET /orders
+    config:
+      claims_to_verify: [exp]
+      key_claim_name: iss
+      cookie_names: []
+      header_names:
+        - Authorization
+      anonymous: ~
+
+  - name: jwt
+    route: order-item              # GET|PATCH|DELETE /orders/:id
+    config:
+      claims_to_verify: [exp]
+      key_claim_name: iss
+      cookie_names: []
+      header_names:
+        - Authorization
+      anonymous: ~
