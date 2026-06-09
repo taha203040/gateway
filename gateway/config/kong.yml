@@ -147,11 +147,28 @@ consumers:
           -----BEGIN PUBLIC KEY-----
           <paste your RS256 public key here>
           -----END PUBLIC KEY-----
-
-# ─────────────────────────────────────────
+#-----------------------------------------
+  - username: order-service
+    tags: [internal, service-to-service]
+    keyauth_credentials:
+      - key: "a8f3b2c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0"
+        tags: [order-to-inventory]
 # 2. JWT plugin — inventory routes
-# ─────────────────────────────────────────
 plugins:
+  - name: key-auth
+    route: inventory-stock          # PATCH /items/:id/stock
+    config:
+      key_names:
+        - X-API-Key                 # order service sends this header
+      hide_credentials: true        # strip the key before forwarding to inventory-svc
+      anonymous: ~  
+
+  - name: request-transformer
+    route: inventory-stock
+    config:
+      add:
+        headers:
+          - "X-Internal-Call: true"
   - name: jwt
     route: inventory-list          # GET /items
     config:
