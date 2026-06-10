@@ -1,6 +1,6 @@
 services:
   kong:
-    build : ./gateway
+    image: kong:latest
     extra_hosts:
     - "host.docker.internal:host-gateway"
     volumes:
@@ -10,7 +10,7 @@ services:
     environment:
     - KONG_DATABASE=off
     - KONG_DECLARATIVE_CONFIG=/usr/local/kong/declarative/kong.yml
-    - KONG_PLUGINS=bundled,jwt-blacklist
+    # - KONG_PLUGINS=bundled,jwt-blacklist
     - KONG_PROXY_ACCESS_LOG=/dev/stdout
     - KONG_ADMIN_ACCESS_LOG=/dev/stdout
     - KONG_PROXY_ERROR_LOG=/dev/stderr

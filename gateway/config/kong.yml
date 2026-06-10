@@ -1,5 +1,4 @@
 _format_version: "3.0"
-_transform: true
 
 # ─────────────────────────────────────────
 # Services
@@ -30,7 +29,6 @@ services:
 # Routes
 # ─────────────────────────────────────────
 routes:
-  # Auth — public routes (no JWT plugin)
   - name: auth-register
     service: auth-service
     paths: [/auth/register]
@@ -66,7 +64,6 @@ routes:
     strip_path: false
     tags: [auth, protected]
 
-  # Inventory — protected routes
   - name: inventory-list
     service: inventory-service
     paths: [/items]
@@ -83,19 +80,18 @@ routes:
 
   - name: inventory-item
     service: inventory-service
-    paths: [~/items/[^/]+$]
+    paths: ["~/items/[^/]+$"]
     methods: [GET, PATCH, DELETE]
     strip_path: false
     tags: [inventory, protected]
 
   - name: inventory-stock
     service: inventory-service
-    paths: [~/items/[^/]+/stock]
+    paths: ["~/items/[^/]+/stock"]
     methods: [PATCH]
     strip_path: false
     tags: [inventory, protected]
 
-  # Order — protected routes
   - name: order-create
     service: order-service
     paths: [/orders]
@@ -112,132 +108,186 @@ routes:
 
   - name: order-item
     service: order-service
-    paths: [~/orders/[^/]+$]
+    paths: ["~/orders/[^/]+$"]
     methods: [GET, PATCH, DELETE]
     strip_path: false
     tags: [order, protected]
 
 # ─────────────────────────────────────────
-# Consumers (user tiers for rate limiting)
-# ─────────────────────────────────────────
-
-# ─────────────────────────────────────────
-# 1. Consumers — one per user tier
-#    Each holds the RS256 public key Kong
-#    uses to verify tokens minted by your
-#    auth service.
+# Consumers
+# No consumer groups — rate limiting is
+# applied directly per consumer instead.
 # ─────────────────────────────────────────
 consumers:
   - username: free-tier
     tags: [tier-free]
     jwt_secrets:
-      - key: free-tier-issuer       # must match the "iss" claim in your JWT
-        algorithm: RS256
-        rsa_public_key: |
-          -----BEGIN PUBLIC KEY-----
-          <paste your RS256 public key here>
-          -----END PUBLIC KEY-----
+      - key: free-tier-issuer
+        algorithm: HS256
+        secret: "r4nd0mH5-256-K3y!X9q7Lp2vB8wM4nC1jF5tY6zA3sD0eRgUkHo"
 
   - username: paid-tier
     tags: [tier-paid]
     jwt_secrets:
       - key: paid-tier-issuer
-        algorithm: RS256
-        rsa_public_key: |
-          -----BEGIN PUBLIC KEY-----
-          <paste your RS256 public key here>
-          -----END PUBLIC KEY-----
-#-----------------------------------------
+        algorithm: HS256
+        secret: "r4nd0mH5-256-K3y!X9q7Lp2vB8wM4nC1jF5tY6zA3sD0eRgUkHo"
+
   - username: order-service
     tags: [internal, service-to-service]
     keyauth_credentials:
-      - key: "a8f3b2c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0"
+      - key: "replace-with-openssl-rand-hex-32"
         tags: [order-to-inventory]
-# 2. JWT plugin — inventory routes
+
+# ─────────────────────────────────────────
+# Plugins
+# ─────────────────────────────────────────
 plugins:
+
+  # ── Rate limiting — global IP ceiling ─
+  # Catches unauthenticated (anon) traffic
+  # and acts as a hard ceiling for everyone.
+  - name: rate-limiting
+    config:
+      minute: 20
+      policy: redis
+      redis:
+        host: redis
+        port: 6379
+        timeout: 2000
+      limit_by: ip
+      fault_tolerant: true
+      hide_client_headers: false
+
+  # ── Rate limiting — free-tier consumer ─
+  # Scoped directly to the consumer.
+  # Overrides the global plugin for this
+  # consumer — Kong uses the most specific
+  # scope that matches.
+  - name: rate-limiting
+    consumer: free-tier
+    config:
+      minute: 100
+      policy: redis
+      redis:
+        host: redis
+        port: 6379
+        timeout: 2000
+      limit_by: consumer
+      fault_tolerant: true
+      hide_client_headers: false
+
+  # ── Rate limiting — paid-tier consumer ─
+  - name: rate-limiting
+    consumer: paid-tier
+    config:
+      minute: 500
+      policy: redis
+      redis:
+        host: redis
+        port: 6379
+        timeout: 2000
+      limit_by: consumer
+      fault_tolerant: true
+      hide_client_headers: false
+
+  # ── Key Auth — inventory-stock only ───
   - name: key-auth
-    route: inventory-stock          # PATCH /items/:id/stock
+    route: inventory-stock
     config:
       key_names:
-        - X-API-Key                 # order service sends this header
-      hide_credentials: true        # strip the key before forwarding to inventory-svc
-      anonymous: ~  
+        - X-API-Key
+      hide_credentials: true
+      anonymous: ~
 
+  # ── Request Transformer — mark internal calls
   - name: request-transformer
     route: inventory-stock
     config:
       add:
         headers:
           - "X-Internal-Call: true"
-  - name: jwt
-    route: inventory-list          # GET /items
-    config:
-      claims_to_verify: [exp]      # reject expired tokens
-      key_claim_name: iss          # Kong looks up consumer by "iss" value
-      cookie_names: []             # Bearer token only, no cookie fallback
-      header_names:
-        - Authorization            # expects: Authorization: Bearer <token>
-      anonymous: ~                 # null = no anonymous passthrough; 401 if missing
 
+  # ── JWT — auth protected routes ───────
   - name: jwt
-    route: inventory-create        # POST /items
+    route: auth-logout
     config:
       claims_to_verify: [exp]
       key_claim_name: iss
       cookie_names: []
-      header_names:
-        - Authorization
+      header_names: [Authorization]
       anonymous: ~
 
   - name: jwt
-    route: inventory-item          # GET|PATCH|DELETE /items/:id
+    route: auth-verify
     config:
       claims_to_verify: [exp]
       key_claim_name: iss
       cookie_names: []
-      header_names:
-        - Authorization
+      header_names: [Authorization]
+      anonymous: ~
+
+  # ── JWT — inventory routes ────────────
+  - name: jwt
+    route: inventory-list
+    config:
+      claims_to_verify: [exp]
+      key_claim_name: iss
+      cookie_names: []
+      header_names: [Authorization]
       anonymous: ~
 
   - name: jwt
-    route: inventory-stock         # PATCH /items/:id/stock
+    route: inventory-create
     config:
       claims_to_verify: [exp]
       key_claim_name: iss
       cookie_names: []
-      header_names:
-        - Authorization
-      anonymous: ~
-
-# ─────────────────────────────────────────
-# 3. JWT plugin — order routes
-# ─────────────────────────────────────────
-  - name: jwt
-    route: order-create            # POST /orders
-    config:
-      claims_to_verify: [exp]
-      key_claim_name: iss
-      cookie_names: []
-      header_names:
-        - Authorization
+      header_names: [Authorization]
       anonymous: ~
 
   - name: jwt
-    route: order-list              # GET /orders
+    route: inventory-item
     config:
       claims_to_verify: [exp]
       key_claim_name: iss
       cookie_names: []
-      header_names:
-        - Authorization
+      header_names: [Authorization]
       anonymous: ~
 
   - name: jwt
-    route: order-item              # GET|PATCH|DELETE /orders/:id
+    route: inventory-stock
     config:
       claims_to_verify: [exp]
       key_claim_name: iss
       cookie_names: []
-      header_names:
-        - Authorization
+      header_names: [Authorization]
+      anonymous: ~
+
+  # ── JWT — order routes ────────────────
+  - name: jwt
+    route: order-create
+    config:
+      claims_to_verify: [exp]
+      key_claim_name: iss
+      cookie_names: []
+      header_names: [Authorization]
+      anonymous: ~
+
+  - name: jwt
+    route: order-list
+    config:
+      claims_to_verify: [exp]
+      key_claim_name: iss
+      cookie_names: []
+      header_names: [Authorization]
+      anonymous: ~
+
+  - name: jwt
+    route: order-item
+    config:
+      claims_to_verify: [exp]
+      key_claim_name: iss
+      cookie_names: []
+      header_names: [Authorization]
       anonymous: ~
