@@ -291,3 +291,9 @@ plugins:
       cookie_names: []
       header_names: [Authorization]
       anonymous: ~
+  - name: prometheus
+    config:
+      status_code_metrics: true     # req count broken down by status code
+      latency_metrics: true         # upstream + Kong latency histograms
+      upstream_health_metrics: true # is each upstream healthy or not
+      bandwidth_metrics: true       # bytes in/out per service
