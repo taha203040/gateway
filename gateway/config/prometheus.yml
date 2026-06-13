@@ -1,0 +1,25 @@
+global:
+  scrape_interval: 15s      # pull metrics every 15 seconds
+  evaluation_interval: 15s  # evaluate alerting rules every 15 seconds
+
+scrape_configs:
+
+  # ── Kong Gateway metrics ──────────────
+  # Kong exposes all plugin metrics at
+  # the Admin API /metrics endpoint.
+  # Never expose :8001 publicly — only
+  # reachable inside the Docker network.
+  - job_name: kong
+    static_configs:
+      - targets:
+          - localhost:8001         # Admin API inside Docker network
+    metrics_path: /metrics
+
+  # ── Redis metrics (optional) ──────────
+  # Requires redis-exporter sidecar.
+  # Useful to correlate rate limit hits
+  # with Redis memory/ops.
+  # - job_name: redis
+  #   static_configs:
+  #     - targets:
+  #         - redis-exporter:9121
