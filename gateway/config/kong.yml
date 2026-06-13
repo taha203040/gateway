@@ -143,6 +143,115 @@ consumers:
 # Plugins
 # ─────────────────────────────────────────
 plugins:
+  - name: response-transformer
+    config:
+      add:
+        headers:
+          - "X-Gateway: kong"
+          - "X-API-Version: 1.0"
+      remove:
+        headers:
+          - Server          # don't leak upstream server info
+          - X-Powered-By    # don't leak Express/Node info
+ 
+  # ─────────────────────────────────────────
+  # Response Transformer — 401 Unauthorized
+  # Kong's default 401 body is plain text.
+  # Replace it with your standard envelope.
+  #
+  # Scoped to each protected route so we
+  # can set the correct route name in body.
+  # ─────────────────────────────────────────
+ 
+  # inventory routes — 401 body
+  - name: response-transformer
+    route: inventory-list
+    config:
+      if_status: ["401"]
+      replace:
+        body: '{"error":"Unauthorized","code":401,"hint":"Include a valid Bearer token in the Authorization header"}'
+        headers:
+          - "Content-Type: application/json"
+ 
+  - name: response-transformer
+    route: inventory-create
+    config:
+      if_status: ["401"]
+      replace:
+        body: '{"error":"Unauthorized","code":401,"hint":"Include a valid Bearer token in the Authorization header"}'
+        headers:
+          - "Content-Type: application/json"
+ 
+  - name: response-transformer
+    route: inventory-item
+    config:
+      if_status: ["401"]
+      replace:
+        body: '{"error":"Unauthorized","code":401,"hint":"Include a valid Bearer token in the Authorization header"}'
+        headers:
+          - "Content-Type: application/json"
+ 
+  - name: response-transformer
+    route: inventory-stock
+    config:
+      if_status: ["401"]
+      replace:
+        body: '{"error":"Unauthorized","code":401,"hint":"Include a valid Bearer token in the Authorization header"}'
+        headers:
+          - "Content-Type: application/json"
+ 
+  # order routes — 401 body
+  - name: response-transformer
+    route: order-create
+    config:
+      if_status: ["401"]
+      replace:
+        body: '{"error":"Unauthorized","code":401,"hint":"Include a valid Bearer token in the Authorization header"}'
+        headers:
+          - "Content-Type: application/json"
+ 
+  - name: response-transformer
+    route: order-list
+    config:
+      if_status: ["401"]
+      replace:
+        body: '{"error":"Unauthorized","code":401,"hint":"Include a valid Bearer token in the Authorization header"}'
+        headers:
+          - "Content-Type: application/json"
+ 
+  - name: response-transformer
+    route: order-item
+    config:
+      if_status: ["401"]
+      replace:
+        body: '{"error":"Unauthorized","code":401,"hint":"Include a valid Bearer token in the Authorization header"}'
+        headers:
+          - "Content-Type: application/json"
+ 
+  # ─────────────────────────────────────────
+  # Response Transformer — 429 Rate Limited
+  # Kong's default 429 body is also plain
+  # text. Standardize it here globally.
+  # ─────────────────────────────────────────
+  - name: response-transformer
+    config:
+      if_status: ["429"]
+      replace:
+        body: '{"error":"Rate limit exceeded","code":429,"hint":"Check X-RateLimit-Limit-Minute and X-RateLimit-Remaining-Minute headers"}'
+        headers:
+          - "Content-Type: application/json"
+ 
+  # ─────────────────────────────────────────
+  # Response Transformer — 403 Forbidden
+  # Fired by ip-restriction and ACL plugins.
+  # ─────────────────────────────────────────
+  - name: response-transformer
+    config:
+      if_status: ["403"]
+      replace:
+        body: '{"error":"Forbidden","code":403,"hint":"Your IP or consumer does not have access to this resource"}'
+        headers:
+          - "Content-Type: application/json"
   - name: http-log
     config:
       http_endpoint: http://log-collector:4000/logs
