@@ -1,4 +1,15 @@
 services:
+  log-collector:
+    build:
+      context: ./log-collector
+      dockerfile: Dockerfile
+    container_name: log-collector
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    networks:
+      - gateway-net
+ 
   kong:
     image: kong:latest
     extra_hosts:

@@ -143,6 +143,20 @@ consumers:
 # Plugins
 # ─────────────────────────────────────────
 plugins:
+  - name: http-log
+    config:
+      http_endpoint: http://log-collector:4000/logs
+      method: POST
+      content_type: application/json
+      timeout: 3000       # ms — don't let slow collector stall Kong
+      keepalive: 60000    # reuse HTTP connection for 60s
+      flush_timeout: 2    # seconds before flushing buffered logs
+      retry_count: 2      # retry on failure before dropping
+      queue:
+        max_batch_size: 100      # send up to 100 log entries per POST
+        max_coalescing_delay: 1  # wait up to 1s to fill a batch
+        max_entries: 10000       # buffer up to 10k entries in memory
+ 
   - name: correlation-id
     config:
       header_name: X-Correlation-Id    # injected on every request + response
