@@ -143,7 +143,11 @@ consumers:
 # Plugins
 # ─────────────────────────────────────────
 plugins:
-
+  - name: correlation-id
+    config:
+      header_name: X-Correlation-Id    # injected on every request + response
+      generator: uuid                  # format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+      echo_downstream: true       
   # ── Rate limiting — global IP ceiling ─
   # Catches unauthenticated (anon) traffic
   # and acts as a hard ceiling for everyone.
