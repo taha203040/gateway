@@ -1,0 +1,26 @@
+FROM kong:latest
+
+USER root
+
+# Install curl and deck
+RUN apt-get update && apt-get install -y curl
+RUN curl -sL https://github.com/Kong/deck/releases/latest/download/deck_linux_amd64.tar.gz -o deck.tar.gz \
+    && tar -xzf deck.tar.gz -C /usr/local/bin/ deck \
+    && rm deck.tar.gz
+
+# Set environment variables with placeholders
+ENV KONG_ADMIN_URL=http://kong:8001
+ENV DECK_KONG_ADDR=http://kong:8001
+ENV KONNECT_TOKEN=kpat_3ivMiyXfuaaS3fw846LI0HwPgx80WmUvJ0o6jRxBGvA1fjvmA
+ENV DECK_KONNECT_TOKEN=${KONNECT_TOKEN}
+ENV DECK_KONNECT_CONTROL_PLANE_NAME=quickstart
+ENV KONNECT_CONTROL_PLANE_URL=https://us.api.konghq.com
+ENV KONNECT_PROXY_URL=http://localhost:8000
+ENV KONNECT_PLANE_NAME=apigateway
+
+# Copy config file (optional)
+COPY konnect.yaml /tmp/konnect.yaml
+
+# Validate and apply config
+RUN deck validate --konnect-token $KONNECT_TOKEN --konnect-runtime-group-name $KONNECT_PLANE_NAME --state /tmp/konnect.yaml || true
+CMD deck sync --konnect-token $KONNECT_TOKEN --konnect-runtime-group-name $KONNECT_PLANE_NAME --state /tmp/konnect.yaml

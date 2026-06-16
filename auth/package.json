@@ -6,7 +6,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "ts": "ts-node src/",
     "prepublishOnly": "npm run build",
-    "dev":"nodemon"
+    "dev": "nodemon"
   },
   "keywords": [],
   "author": "",

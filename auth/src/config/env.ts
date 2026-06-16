@@ -16,7 +16,7 @@ interface EnvConfig {
 
 function getEnvConfig(): EnvConfig {
   return {
-    PORT: parseInt(process.env.PORT || '4000', 10),
+    PORT: parseInt(process.env.PORT || '3000', 10),
     NODEENV: process.env.NODE_ENV || 'development',
     JWTSECRET: process.env.JWT_SECRET || 'default_jwt_secret',
     JWTEXPIRE: process.env.JWT_EXPIRES_IN || '7d',

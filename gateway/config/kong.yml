@@ -5,21 +5,22 @@ _format_version: "3.0"
 # ─────────────────────────────────────────
 services:
   - name: auth-service
-    url: http://auth-svc:3000
+    # url: http://auth-svc:3000
+    url: http://localhost:3000
     connect_timeout: 5000
     read_timeout: 10000
     write_timeout: 10000
     tags: [auth]
 
   - name: inventory-service
-    url: http://inventory-svc:3001
+    url: http://localhost:4100
     connect_timeout: 5000
     read_timeout: 10000
     write_timeout: 10000
     tags: [inventory]
 
   - name: order-service
-    url: http://order-svc:3002
+    url: http://localhost:4000
     connect_timeout: 5000
     read_timeout: 10000
     write_timeout: 10000
@@ -30,88 +31,145 @@ services:
 # ─────────────────────────────────────────
 routes:
   - name: auth-register
-    service: auth-service
-    paths: [/auth/register]
-    methods: [POST]
+    service:
+      name: auth-service
+    paths:
+      - /auth/register
+    methods:
+      - POST
     strip_path: false
-    tags: [auth, public]
-
+    tags:
+      - auth
+      - public
   - name: auth-login
-    service: auth-service
-    paths: [/auth/login]
-    methods: [POST]
+    service:
+      name: auth-service
+    paths:
+      - /auth/login
+    methods:
+      - POST
     strip_path: false
-    tags: [auth, public]
-
+    tags:
+      - auth
+      - public
   - name: auth-refresh
-    service: auth-service
-    paths: [/auth/refresh]
-    methods: [POST]
+    service:
+      name: auth-service
+    paths:
+      - /auth/refresh
+    methods:
+      - POST
     strip_path: false
-    tags: [auth, public]
-
+    tags:
+      - auth
+      - public
   - name: auth-logout
-    service: auth-service
-    paths: [/auth/logout]
-    methods: [POST]
+    service:
+      name: auth-service
+    paths:
+      - /auth/logout
+    methods:
+      - POST
     strip_path: false
-    tags: [auth, protected]
+    tags:
+      - auth
+      - protected
 
   - name: auth-verify
-    service: auth-service
-    paths: [/auth/verify]
-    methods: [GET]
+    service:
+      name: auth-service
+    paths:
+      - /auth/verify
+    methods:
+      - GET
     strip_path: false
-    tags: [auth, protected]
+    tags:
+      - auth
+      - protected
 
   - name: inventory-list
-    service: inventory-service
-    paths: [/items]
-    methods: [GET]
+    service:
+      name: inventory-service
+    paths:
+      - /items
+    methods:
+      - GET
     strip_path: false
-    tags: [inventory, protected]
-
+    tags:
+      - inventory
+      - protected
   - name: inventory-create
-    service: inventory-service
-    paths: [/items]
-    methods: [POST]
+    service:
+      name: inventory-service
+    paths:
+      - /items
+    methods:
+      - POST
     strip_path: false
-    tags: [inventory, protected]
-
+    tags:
+      - inventory
+      - protected
   - name: inventory-item
-    service: inventory-service
-    paths: ["~/items/[^/]+$"]
-    methods: [GET, PATCH, DELETE]
+    service:
+      name: inventory-service
+    paths:
+      - "~/items/[^/]+$"
+    methods:
+      - GET
+      - PATCH
+      - DELETE
     strip_path: false
-    tags: [inventory, protected]
-
+    tags:
+      - inventory
+      - protected
   - name: inventory-stock
-    service: inventory-service
-    paths: ["~/items/[^/]+/stock"]
-    methods: [PATCH]
+    service:
+      name: inventory-service
+    paths:
+      - "~/items/[^/]+/stock"
+    methods:
+      - PATCH
     strip_path: false
-    tags: [inventory, protected]
-
+    tags:
+      - inventory
+      - protected
   - name: order-create
-    service: order-service
-    paths: [/orders]
-    methods: [POST]
+    service:
+      name: order-service
+    paths:
+      - /orders
+    methods:
+      - POST
     strip_path: false
-    tags: [order, protected]
+    tags:
+      - order
+      - protected
 
   - name: order-list
-    service: order-service
-    paths: [/orders]
-    methods: [GET]
+    service:
+      name: order-service
+    paths:
+      - /orders
+    methods:
+      - GET
     strip_path: false
-    tags: [order, protected]
+    tags:
+      - order
+      - protected
 
   - name: order-item
-    service: order-service
-    paths: ["~/orders/[^/]+$"]
-    methods: [GET, PATCH, DELETE]
+    service:
+      name: order-service
+    paths:
+      - "~/orders/[^/]+$"
+    methods:
+      - GET
+      - PATCH
+      - DELETE
     strip_path: false
-    tags: [order, protected]
+    tags:
+      - order
+      - protected
 
 # ─────────────────────────────────────────
 # Consumers
@@ -177,7 +235,7 @@ plugins:
   # ─────────────────────────────────────────
  
   # inventory routes — 401 body
-  - name: response-transformer
+  - name: response-transformer-advanced
     route: inventory-list
     config:
       if_status: ["401"]
@@ -186,7 +244,7 @@ plugins:
         headers:
           - "Content-Type: application/json"
  
-  - name: response-transformer
+  - name: response-transformer-advanced
     route: inventory-create
     config:
       if_status: ["401"]
@@ -195,7 +253,7 @@ plugins:
         headers:
           - "Content-Type: application/json"
  
-  - name: response-transformer
+  - name: response-transformer-advanced
     route: inventory-item
     config:
       if_status: ["401"]
@@ -204,7 +262,7 @@ plugins:
         headers:
           - "Content-Type: application/json"
  
-  - name: response-transformer
+  - name: response-transformer-advanced
     route: inventory-stock
     config:
       if_status: ["401"]
@@ -214,7 +272,7 @@ plugins:
           - "Content-Type: application/json"
  
   # order routes — 401 body
-  - name: response-transformer
+  - name: response-transformer-advanced
     route: order-create
     config:
       if_status: ["401"]
@@ -223,7 +281,7 @@ plugins:
         headers:
           - "Content-Type: application/json"
  
-  - name: response-transformer
+  - name: response-transformer-advanced
     route: order-list
     config:
       if_status: ["401"]
@@ -232,7 +290,7 @@ plugins:
         headers:
           - "Content-Type: application/json"
  
-  - name: response-transformer
+  - name: response-transformer-advanced
     route: order-item
     config:
       if_status: ["401"]
@@ -246,7 +304,7 @@ plugins:
   # Kong's default 429 body is also plain
   # text. Standardize it here globally.
   # ─────────────────────────────────────────
-  - name: response-transformer
+  - name: response-transformer-advanced
     config:
       if_status: ["429"]
       replace:
@@ -258,7 +316,7 @@ plugins:
   # Response Transformer — 403 Forbidden
   # Fired by ip-restriction and ACL plugins.
   # ─────────────────────────────────────────
-  - name: response-transformer
+  - name: response-transformer-advanced
     config:
       if_status: ["403"]
       replace:
@@ -437,3 +495,5 @@ plugins:
       # latency_metrics: true         # upstream + Kong latency histograms
       # upstream_health_metrics: true # is each upstream healthy or not
       # bandwidth_metrics: true       # bytes in/out per service
+
+
