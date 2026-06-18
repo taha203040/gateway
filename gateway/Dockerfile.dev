@@ -1,26 +1,23 @@
-FROM kong:latest
+FROM kong/kong-gateway:3.14
 
 USER root
 
-# Install curl and deck
-RUN apt-get update && apt-get install -y curl
-RUN curl -sL https://github.com/Kong/deck/releases/latest/download/deck_linux_amd64.tar.gz -o deck.tar.gz \
-    && tar -xzf deck.tar.gz -C /usr/local/bin/ deck \
-    && rm deck.tar.gz
+COPY kong.yml /etc/kong/kong.yml
+COPY cluster.crt /etc/kong/certs/cluster.crt
+COPY cluster.key /etc/kong/certs/cluster.key
 
-# Set environment variables with placeholders
-ENV KONG_ADMIN_URL=http://kong:8001
-ENV DECK_KONG_ADDR=http://kong:8001
-ENV KONNECT_TOKEN=kpat_3ivMiyXfuaaS3fw846LI0HwPgx80WmUvJ0o6jRxBGvA1fjvmA
-ENV DECK_KONNECT_TOKEN=${KONNECT_TOKEN}
-ENV DECK_KONNECT_CONTROL_PLANE_NAME=quickstart
-ENV KONNECT_CONTROL_PLANE_URL=https://us.api.konghq.com
-ENV KONNECT_PROXY_URL=http://localhost:8000
-ENV KONNECT_PLANE_NAME=apigateway
+ENV KONG_DATABASE=off
+ENV KONG_ROLE=data_plane
+ENV KONG_VITALS=off
+ENV KONG_CLUSTER_MTLS=pki
+ENV KONG_CLUSTER_CONTROL_PLANE=7326248e36.us.cp.konghq.com:443
+ENV KONG_CLUSTER_SERVER_NAME=7326248e36.us.cp.konghq.com
+ENV KONG_CLUSTER_TELEMETRY_ENDPOINT=7326248e36.us.tp.konghq.com:443
+ENV KONG_CLUSTER_TELEMETRY_SERVER_NAME=7326248e36.us.tp.konghq.com
+ENV KONG_CLUSTER_CERT=/etc/kong/certs/cluster.crt
+ENV KONG_CLUSTER_CERT_KEY=/etc/kong/certs/cluster.key
+ENV KONG_LUA_SSL_TRUSTED_CERTIFICATE=system
+ENV KONG_TLS_CERTIFICATE_VERIFY=off
+ENV KONG_KONNECT_MODE=on
 
-# Copy config file (optional)
-COPY konnect.yaml /tmp/konnect.yaml
-
-# Validate and apply config
-RUN deck validate --konnect-token $KONNECT_TOKEN --konnect-runtime-group-name $KONNECT_PLANE_NAME --state /tmp/konnect.yaml || true
-CMD deck sync --konnect-token $KONNECT_TOKEN --konnect-runtime-group-name $KONNECT_PLANE_NAME --state /tmp/konnect.yaml
+USER kong
