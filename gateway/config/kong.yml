@@ -9,7 +9,7 @@ services:
     tags: [auth]
     routes:
       - name: auth-register
-        paths: [/auth/register]
+        paths: [/auth/signup]
         methods: [POST]
         strip_path: false
         tags: [auth, public]
@@ -122,300 +122,223 @@ consumers:
 # ─────────────────────────────────────────
 # Plugins
 # ─────────────────────────────────────────
-# plugins:
-#   - name: request-transformer
-#     route: inventory-create
-#     config:
-#       add:
-#         headers:
-#           - "X-Consumer-Role: admin"
+plugins:
+  - name: request-transformer
+    route: inventory-create
+    config:
+      add:
+        headers:
+          - "X-Consumer-Role: admin"
 
-#   - name: request-transformer
-#     route: inventory-item
-#     config:
-#       add:
-#         headers:
-#           - "X-Consumer-Role: admin"
-#   - name: response-transformer
-#     config:
-#       add:
-#         headers:
-#           - "X-Gateway: kong"
-#           - "X-API-Version: 1.0"
-#       remove:
-#         headers:
-#           - Server          # don't leak upstream server info
-#           - X-Powered-By    # don't leak Express/Node info
+  - name: request-transformer
+    route: inventory-item
+    config:
+      add:
+        headers:
+          - "X-Consumer-Role: admin"
+  - name: response-transformer
+    config:
+      add:
+        headers:
+          - "X-Gateway: kong"
+          - "X-API-Version: 1.0"
+      remove:
+        headers:
+          - Server          # don't leak upstream server info
+          - X-Powered-By    # don't leak Express/Node info
  
-#   # ─────────────────────────────────────────
-#   # Response Transformer — 401 Unauthorized
-#   # Kong's default 401 body is plain text.
-#   # Replace it with your standard envelope.
-#   #
-#   # Scoped to each protected route so we
-#   # can set the correct route name in body.
-#   # ─────────────────────────────────────────
+  # ─────────────────────────────────────────
+  # Response Transformer — 401 Unauthorized
+  # Kong's default 401 body is plain text.
+  # Replace it with your standard envelope.
+  #
+  # Scoped to each protected route so we
+  # can set the correct route name in body.
+  # ─────────────────────────────────────────
  
-#   # inventory routes — 401 body
-#   - name: response-transformer-advanced
-#     route: inventory-list
-#     config:
-#       if_status: ["401"]
-#       replace:
-#         body: '{"error":"Unauthorized","code":401,"hint":"Include a valid Bearer token in the Authorization header"}'
-#         headers:
-#           - "Content-Type: application/json"
+  # inventory routes — 401 body
+
+  - name: response-transformer-advanced
+    config:
+      replace:
+        body: '{"error":"Unauthorized","code":401,"hint":"Include a valid Bearer token in the Authorization header"}'
+        headers:
+          - "Content-Type: application/json"
+        if_status:
+          - "401"
+          - "403"
+          - "429"
+  - name: http-log
+    config:
+      http_endpoint: http://log-collector:4000/logs
+      method: POST
+      content_type: application/json
+      timeout: 3000       # ms — don't let slow collector stall Kong
+      keepalive: 60000    # reuse HTTP connection for 60s
+      flush_timeout: 2    # seconds before flushing buffered logs
+      retry_count: 2      # retry on failure before dropping
+      queue:
+        max_batch_size: 100      # send up to 100 log entries per POST
+        max_coalescing_delay: 1  # wait up to 1s to fill a batch
+        max_entries: 10000       # buffer up to 10k entries in memory
  
-#   - name: response-transformer-advanced
-#     route: inventory-create
-#     config:
-#       if_status: ["401"]
-#       replace:
-#         body: '{"error":"Unauthorized","code":401,"hint":"Include a valid Bearer token in the Authorization header"}'
-#         headers:
-#           - "Content-Type: application/json"
- 
-#   - name: response-transformer-advanced
-#     route: inventory-item
-#     config:
-#       if_status: ["401"]
-#       replace:
-#         body: '{"error":"Unauthorized","code":401,"hint":"Include a valid Bearer token in the Authorization header"}'
-#         headers:
-#           - "Content-Type: application/json"
- 
-#   - name: response-transformer-advanced
-#     route: inventory-stock
-#     config:
-#       if_status: ["401"]
-#       replace:
-#         body: '{"error":"Unauthorized","code":401,"hint":"Include a valid Bearer token in the Authorization header"}'
-#         headers:
-#           - "Content-Type: application/json"
- 
-#   # order routes — 401 body
-#   - name: response-transformer-advanced
-#     route: order-create
-#     config:
-#       if_status: ["401"]
-#       replace:
-#         body: '{"error":"Unauthorized","code":401,"hint":"Include a valid Bearer token in the Authorization header"}'
-#         headers:
-#           - "Content-Type: application/json"
- 
-#   - name: response-transformer-advanced
-#     route: order-list
-#     config:
-#       if_status: ["401"]
-#       replace:
-#         body: '{"error":"Unauthorized","code":401,"hint":"Include a valid Bearer token in the Authorization header"}'
-#         headers:
-#           - "Content-Type: application/json"
- 
-#   - name: response-transformer-advanced
-#     route: order-item
-#     config:
-#       if_status: ["401"]
-#       replace:
-#         body: '{"error":"Unauthorized","code":401,"hint":"Include a valid Bearer token in the Authorization header"}'
-#         headers:
-#           - "Content-Type: application/json"
- 
-#   # ─────────────────────────────────────────
-#   # Response Transformer — 429 Rate Limited
-#   # Kong's default 429 body is also plain
-#   # text. Standardize it here globally.
-#   # ─────────────────────────────────────────
-#   - name: response-transformer-advanced
-#     config:
-#       if_status: ["429"]
-#       replace:
-#         body: '{"error":"Rate limit exceeded","code":429,"hint":"Check X-RateLimit-Limit-Minute and X-RateLimit-Remaining-Minute headers"}'
-#         headers:
-#           - "Content-Type: application/json"
- 
-#   # ─────────────────────────────────────────
-#   # Response Transformer — 403 Forbidden
-#   # Fired by ip-restriction and ACL plugins.
-#   # ─────────────────────────────────────────
-#   - name: response-transformer-advanced
-#     config:
-#       if_status: ["403"]
-#       replace:
-#         body: '{"error":"Forbidden","code":403,"hint":"Your IP or consumer does not have access to this resource"}'
-#         headers:
-#           - "Content-Type: application/json"
-#   - name: http-log
-#     config:
-#       http_endpoint: http://log-collector:4000/logs
-#       method: POST
-#       content_type: application/json
-#       timeout: 3000       # ms — don't let slow collector stall Kong
-#       keepalive: 60000    # reuse HTTP connection for 60s
-#       flush_timeout: 2    # seconds before flushing buffered logs
-#       retry_count: 2      # retry on failure before dropping
-#       queue:
-#         max_batch_size: 100      # send up to 100 log entries per POST
-#         max_coalescing_delay: 1  # wait up to 1s to fill a batch
-#         max_entries: 10000       # buffer up to 10k entries in memory
- 
-#   - name: correlation-id
-#     config:
-#       header_name: X-Correlation-Id    # injected on every request + response
-#       generator: uuid                  # format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-#       echo_downstream: true       
-#   # ── Rate limiting — global IP ceiling ─
-#   # Catches unauthenticated (anon) traffic
-#   # and acts as a hard ceiling for everyone.
-#   - name: rate-limiting
-#     config:
-#       minute: 20
-#       policy: redis
-#       redis:
-#         host: redis
-#         port: 6379
-#         timeout: 2000
-#       limit_by: ip
-#       fault_tolerant: true
-#       hide_client_headers: false
+  - name: correlation-id
+    config:
+      header_name: X-Correlation-Id    # injected on every request + response
+      generator: uuid                  # format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+      echo_downstream: true       
+  # ── Rate limiting — global IP ceiling ─
+  # Catches unauthenticated (anon) traffic
+  # and acts as a hard ceiling for everyone.
+  - name: rate-limiting
+    config:
+      minute: 20
+      policy: redis
+      redis:
+        host: redis
+        port: 6379
+        timeout: 2000
+      limit_by: ip
+      fault_tolerant: true
+      hide_client_headers: false
 
-#   # ── Rate limiting — free-tier consumer ─
-#   # Scoped directly to the consumer.
-#   # Overrides the global plugin for this
-#   # consumer — Kong uses the most specific
-#   # scope that matches.
-#   - name: rate-limiting
-#     consumer: free-tier
-#     config:
-#       minute: 100
-#       policy: redis
-#       redis:
-#         host: redis
-#         port: 6379
-#         timeout: 2000
-#       limit_by: consumer
-#       fault_tolerant: true
-#       hide_client_headers: false
+  # ── Rate limiting — free-tier consumer ─
+  # Scoped directly to the consumer.
+  # Overrides the global plugin for this
+  # consumer — Kong uses the most specific
+  # scope that matches.
+  - name: rate-limiting
+    consumer: free-tier
+    config:
+      minute: 100
+      policy: redis
+      redis:
+        host: redis
+        port: 6379
+        timeout: 2000
+      limit_by: consumer
+      fault_tolerant: true
+      hide_client_headers: false
 
-#   # ── Rate limiting — paid-tier consumer ─
-#   - name: rate-limiting
-#     consumer: paid-tier
-#     config:
-#       minute: 500
-#       policy: redis
-#       redis:
-#         host: redis
-#         port: 6379
-#         timeout: 2000
-#       limit_by: consumer
-#       fault_tolerant: true
-#       hide_client_headers: false
+  # ── Rate limiting — paid-tier consumer ─
+  - name: rate-limiting
+    consumer: paid-tier
+    config:
+      minute: 500
+      policy: redis
+      redis:
+        host: redis
+        port: 6379
+        timeout: 2000
+      limit_by: consumer
+      fault_tolerant: true
+      hide_client_headers: false
 
-#   # ── Key Auth — inventory-stock only ───
-#   - name: key-auth
-#     route: inventory-stock
-#     config:
-#       key_names:
-#         - X-API-Key
-#       hide_credentials: true
-#       anonymous: ~
+  # ── Key Auth — inventory-stock only ───
+  - name: key-auth
+    route: inventory-stock
+    config:
+      key_names:
+        - X-API-Key
+      hide_credentials: true
+      anonymous: ~
 
-#   # ── Request Transformer — mark internal calls
-#   - name: request-transformer
-#     route: inventory-stock
-#     config:
-#       add:
-#         headers:
-#           - "X-Internal-Call: true"
+  # ── Request Transformer — mark internal calls
+  - name: request-transformer
+    route: inventory-stock
+    config:
+      add:
+        headers:
+          - "X-Internal-Call: true"
 
-#   # ── JWT — auth protected routes ───────
-#   - name: jwt
-#     route: auth-logout
-#     config:
-#       claims_to_verify: [exp]
-#       key_claim_name: iss
-#       cookie_names: []
-#       header_names: [Authorization]
-#       anonymous: ~
+  # ── JWT — auth protected routes ───────
+  - name: jwt
+    route: auth-logout
+    config:
+      claims_to_verify: [exp]
+      key_claim_name: iss
+      cookie_names: []
+      header_names: [Authorization]
+      anonymous: ~
 
-#   - name: jwt
-#     route: auth-verify
-#     config:
-#       claims_to_verify: [exp]
-#       key_claim_name: iss
-#       cookie_names: []
-#       header_names: [Authorization]
-#       anonymous: ~
+  - name: jwt
+    route: auth-verify
+    config:
+      claims_to_verify: [exp]
+      key_claim_name: iss
+      cookie_names: []
+      header_names: [Authorization]
+      anonymous: ~
 
-#   # ── JWT — inventory routes ────────────
-#   - name: jwt
-#     route: inventory-list
-#     config:
-#       claims_to_verify: [exp]
-#       key_claim_name: iss
-#       cookie_names: []
-#       header_names: [Authorization]
-#       anonymous: ~
+  # ── JWT — inventory routes ────────────
+  - name: jwt
+    route: inventory-list
+    config:
+      claims_to_verify: [exp]
+      key_claim_name: iss
+      cookie_names: []
+      header_names: [Authorization]
+      anonymous: ~
 
-#   - name: jwt
-#     route: inventory-create
-#     config:
-#       claims_to_verify: [exp]
-#       key_claim_name: iss
-#       cookie_names: []
-#       header_names: [Authorization]
-#       anonymous: ~
+  - name: jwt
+    route: inventory-create
+    config:
+      claims_to_verify: [exp]
+      key_claim_name: iss
+      cookie_names: []
+      header_names: [Authorization]
+      anonymous: ~
 
-#   - name: jwt
-#     route: inventory-item
-#     config:
-#       claims_to_verify: [exp]
-#       key_claim_name: iss
-#       cookie_names: []
-#       header_names: [Authorization]
-#       anonymous: ~
+  - name: jwt
+    route: inventory-item
+    config:
+      claims_to_verify: [exp]
+      key_claim_name: iss
+      cookie_names: []
+      header_names: [Authorization]
+      anonymous: ~
 
-#   - name: jwt
-#     route: inventory-stock
-#     config:
-#       claims_to_verify: [exp]
-#       key_claim_name: iss
-#       cookie_names: []
-#       header_names: [Authorization]
-#       anonymous: ~
+  - name: jwt
+    route: inventory-stock
+    config:
+      claims_to_verify: [exp]
+      key_claim_name: iss
+      cookie_names: []
+      header_names: [Authorization]
+      anonymous: ~
 
-#   # ── JWT — order routes ────────────────
-#   - name: jwt
-#     route: order-create
-#     config:
-#       claims_to_verify: [exp]
-#       key_claim_name: iss
-#       cookie_names: []
-#       header_names: [Authorization]
-#       anonymous: ~
+  # ── JWT — order routes ────────────────
+  - name: jwt
+    route: order-create
+    config:
+      claims_to_verify: [exp]
+      key_claim_name: iss
+      cookie_names: []
+      header_names: [Authorization]
+      anonymous: ~
 
-#   - name: jwt
-#     route: order-list
-#     config:
-#       claims_to_verify: [exp]
-#       key_claim_name: iss
-#       cookie_names: []
-#       header_names: [Authorization]
-#       anonymous: ~
+  - name: jwt
+    route: order-list
+    config:
+      claims_to_verify: [exp]
+      key_claim_name: iss
+      cookie_names: []
+      header_names: [Authorization]
+      anonymous: ~
 
-#   - name: jwt
-#     route: order-item
-#     config:
-#       claims_to_verify: [exp]
-#       key_claim_name: iss
-#       cookie_names: []
-#       header_names: [Authorization]
-#       anonymous: ~
-#   - name: prometheus
-#     config:
-#       status_code_metrics: true     # req count broken down by status code
-#       # latency_metrics: true         # upstream + Kong latency histograms
-#       # upstream_health_metrics: true # is each upstream healthy or not
-#       # bandwidth_metrics: true       # bytes in/out per service
+  - name: jwt
+    route: order-item
+    config:
+      claims_to_verify: [exp]
+      key_claim_name: iss
+      cookie_names: []
+      header_names: [Authorization]
+      anonymous: ~
+  - name: prometheus
+    config:
+      status_code_metrics: true     # req count broken down by status code
+      # latency_metrics: true         # upstream + Kong latency histograms
+      # upstream_health_metrics: true # is each upstream healthy or not
+      # bandwidth_metrics: true       # bytes in/out per service
 
 
