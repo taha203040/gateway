@@ -2,7 +2,8 @@ _format_version: "3.0"
 
 services:
   - name: auth-service
-    url: http://localhost:3000
+  #  url: http://localhost:3000
+    url: http://host.docker.internal:3000
     connect_timeout: 5000
     read_timeout: 10000
     write_timeout: 10000
@@ -39,7 +40,8 @@ services:
         tags: [auth, protected]
 
   - name: inventory-service
-    url: http://localhost:4100
+    url: http://host.docker.internal:4100
+   # url: http://localhost:4100
     connect_timeout: 5000
     read_timeout: 10000
     write_timeout: 10000
@@ -70,7 +72,8 @@ services:
         tags: [inventory, protected]
 
   - name: order-service
-    url: http://localhost:4000
+   # url: http://localhost:4000
+    url: http://host.docker.internal:4000
     connect_timeout: 5000
     read_timeout: 10000
     write_timeout: 10000
@@ -168,19 +171,19 @@ plugins:
           - "401"
           - "403"
           - "429"
-  - name: http-log
-    config:
-      http_endpoint: http://log-collector:4000/logs
-      method: POST
-      content_type: application/json
-      timeout: 3000       # ms — don't let slow collector stall Kong
-      keepalive: 60000    # reuse HTTP connection for 60s
-      flush_timeout: 2    # seconds before flushing buffered logs
-      retry_count: 2      # retry on failure before dropping
-      queue:
-        max_batch_size: 100      # send up to 100 log entries per POST
-        max_coalescing_delay: 1  # wait up to 1s to fill a batch
-        max_entries: 10000       # buffer up to 10k entries in memory
+#  - name: http-log
+ #   config:
+  #    http_endpoint: http://log-collector:4000/logs
+   #   method: POST
+    #  content_type: application/json
+     # timeout: 3000       # ms — don't let slow collector stall Kong
+      # keepalive: 60000    # reuse HTTP connection for 60s
+      #flush_timeout: 2    # seconds before flushing buffered logs
+      # retry_count: 2      # retry on failure before dropping
+     # queue:
+      #  max_batch_size: 100      # send up to 100 log entries per POST
+       # max_coalescing_delay: 1  # wait up to 1s to fill a batch
+       # max_entries: 10000       # buffer up to 10k entries in memory
  
   - name: correlation-id
     config:
