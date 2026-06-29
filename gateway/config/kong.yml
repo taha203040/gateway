@@ -1,6 +1,7 @@
 _format_version: "3.0"
 
 services:
+
   - name: auth-service
   #  url: http://localhost:3000
     url: http://host.docker.internal:3000
@@ -11,25 +12,25 @@ services:
     routes:
       - name: auth-register
         paths: [/auth/signup]
-        methods: [POST]
+        methods: [POST,OPTIONS]
         strip_path: false
         tags: [auth, public]
 
       - name: auth-login
         paths: [/auth/login]
-        methods: [POST]
+        methods: [POST,OPTIONS]
         strip_path: false
         tags: [auth, public]
 
       - name: auth-refresh
         paths: [/auth/refresh]
-        methods: [POST]
+        methods: [POST,OPTIONS]
         strip_path: false
         tags: [auth, public]
 
       - name: auth-logout
         paths: [/auth/logout]
-        methods: [POST]
+        methods: [POST,OPTIONS]
         strip_path: false
         tags: [auth, protected]
 
@@ -61,15 +62,16 @@ services:
 
       - name: inventory-stock
         paths: ["~/items/[^/]+/stock"]
-        methods: [PATCH]
+        methods: [PATCH,POST,DELETE]
         strip_path: false
         tags: [inventory, protected]
 
       - name: inventory-item
         paths: ["~/items/[^/]+$"]
-        methods: [GET, PATCH, DELETE]
+#        methods: [get, patch, delete]
+        methods: [GET]
         strip_path: false
-        tags: [inventory, protected]
+        tags: [inventory, public]
 
   - name: order-service
    # url: http://localhost:4000
@@ -80,25 +82,42 @@ services:
     tags: [order]
     routes:
       - name: order-create
-        paths: [/orders]
+        paths: [/api/orders]
         methods: [POST]
         strip_path: false
         tags: [order, protected]
 
       - name: order-list
-        paths: [/orders]
+        paths: [/api/orders]
         methods: [GET]
         strip_path: false
         tags: [order, protected]
 
       - name: order-item
-        paths: ["~/orders/[^/]+$"]
-        methods: [GET, PATCH, DELETE]
+        paths: ["~/api/orders/[^/]+$"]
+        methods: [GET, DELETE]
+        strip_path: false
+        tags: [order, protected]
+      
+      - name: order-pay
+        paths: ["~/api/orders/[^/]+/pay$"]
+        methods: [PATCH]
+        strip_path: false
+        tags: [order, protected]
+      - name: order-deliver
+        paths: ["~/api/orders/[^/]+/deliver$"]
+        methods: [PATCH]
+        strip_path: false
+        tags: [order, protected]
+      - name: order-cancel
+        paths: ["~/api/orders/[^/]+/cancel$"]
+        methods: [PATCH]
         strip_path: false
         tags: [order, protected]
 # ─────────────────────────────────────────
 # Consumers
-# No consumer groups — rate limiting is
+# No consumer groups — rate limiting is- name: order-service
+  # url: http://localhost:4000
 # applied directly per consumer instead.
 # ─────────────────────────────────────────
 consumers:
@@ -126,6 +145,25 @@ consumers:
 # Plugins
 # ─────────────────────────────────────────
 plugins:
+  - name: cors
+    config:
+      origins:
+        - http://host.docker.internal:5173
+        - http://localhost:5173
+      methods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+      headers:
+        - Accept
+        - Authorization
+        - Content-Type
+      exposed_headers:
+        - Authorization
+      credentials: true
   - name: request-transformer
     route: inventory-create
     config:
@@ -274,15 +312,15 @@ plugins:
       anonymous: ~
 
   # ── JWT — inventory routes ────────────
-  - name: jwt
-    route: inventory-list
-    config:
-      claims_to_verify: [exp]
-      key_claim_name: iss
-      cookie_names: []
-      header_names: [Authorization]
-      anonymous: ~
-
+#  - name: jwt
+#    route: inventory-list
+#    config:
+#      claims_to_verify: [exp]
+#      key_claim_name: iss
+#      cookie_names: []
+#      header_names: [Authorization]
+#      anonymous: ~
+#
   - name: jwt
     route: inventory-create
     config:
@@ -292,14 +330,14 @@ plugins:
       header_names: [Authorization]
       anonymous: ~
 
-  - name: jwt
-    route: inventory-item
-    config:
-      claims_to_verify: [exp]
-      key_claim_name: iss
-      cookie_names: []
-      header_names: [Authorization]
-      anonymous: ~
+#  - name: jwt
+#    route: inventory-item
+#    config:
+#      claims_to_verify: [exp]
+#      key_claim_name: iss
+#      cookie_names: []
+#      header_names: [Authorization]
+#      anonymous: ~
 
   - name: jwt
     route: inventory-stock
@@ -331,6 +369,33 @@ plugins:
 
   - name: jwt
     route: order-item
+    config:
+      claims_to_verify: [exp]
+      key_claim_name: iss
+      cookie_names: []
+      header_names: [Authorization]
+      anonymous: ~
+
+  - name: jwt
+    route: order-pay
+    config:
+      claims_to_verify: [exp]
+      key_claim_name: iss
+      cookie_names: []
+      header_names: [Authorization]
+      anonymous: ~
+
+  - name: jwt
+    route: order-deliver
+    config:
+      claims_to_verify: [exp]
+      key_claim_name: iss
+      cookie_names: []
+      header_names: [Authorization]
+      anonymous: ~
+
+  - name: jwt
+    route: order-cancel
     config:
       claims_to_verify: [exp]
       key_claim_name: iss
