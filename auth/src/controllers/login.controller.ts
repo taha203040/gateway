@@ -38,7 +38,13 @@ export const login = async (req: Request, res: Response) => {
             "A3b7cD9eF1gH2iJ4kL6mN8oP0qR5sT7uV9wX2yZ4",
             { expiresIn: JWT_EXPIRATION }
         );
-
+        res.cookie("access_token", token, {
+          httpOnly: true,
+//        secure: process.env.NODE_ENV === "production", // true in production
+          sameSite: "lax",                               // or "none" if frontend/backend are on different sites with HTTPS
+          maxAge: 1000 * 60 * 60,                        // 1 hour
+          path: "/",
+        });
         // Return success response with token
         res.status(200).json({
             message: 'Login successful',

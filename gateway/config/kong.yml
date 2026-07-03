@@ -56,7 +56,7 @@ services:
 
       - name: inventory-create
         paths: [/items]
-        methods: [POST]
+        methods: [POST,OPTIONS]
         strip_path: false
         tags: [inventory, protected]
 
@@ -140,7 +140,10 @@ consumers:
       - key: auth-service          # Must match the JWT "iss" claim
         algorithm: HS256
         secret: "A3b7cD9eF1gH2iJ4kL6mN8oP0qR5sT7uV9wX2yZ4"
- #:w─────────────────────────────────────────
+  - username: inventory-client
+    keyauth_credentials:
+      - key: "werttt2345cdfhgghfghfghf"
+# :w─────────────────────────────────────────
 # Plugins
 # ─────────────────────────────────────────
 plugins:
@@ -297,7 +300,8 @@ plugins:
     config:
       claims_to_verify: [exp]
       key_claim_name: iss
-      cookie_names: []
+      cookie_names: 
+        - access_token
       header_names: [Authorization]
       anonymous: ~
 
@@ -306,44 +310,49 @@ plugins:
     config:
       claims_to_verify: [exp]
       key_claim_name: iss
-      cookie_names: []
+      cookie_names:
+        - access_token
       header_names: [Authorization]
       anonymous: ~
 
   # ── JWT — inventory routes ────────────
-#  - name: jwt
-#    route: inventory-list
-#    config:
-#      claims_to_verify: [exp]
-#      key_claim_name: iss
-#      cookie_names: []
-#      header_names: [Authorization]
-#      anonymous: ~
+  - name: jwt
+    route: inventory-list
+    config:
+      claims_to_verify: [exp]
+      key_claim_name: iss
+      cookie_names: 
+        - access_token
+      header_names: [Authorization]
+      anonymous: ~
 #
   - name: jwt
     route: inventory-create
     config:
       claims_to_verify: [exp]
       key_claim_name: iss
-      cookie_names: []
+      cookie_names: 
+        - access_token
       header_names: [Authorization]
       anonymous: ~
 
-#  - name: jwt
-#    route: inventory-item
-#    config:
-#      claims_to_verify: [exp]
-#      key_claim_name: iss
-#      cookie_names: []
-#      header_names: [Authorization]
-#      anonymous: ~
+  - name: jwt
+    route: inventory-item
+    config:
+      claims_to_verify: [exp]
+      key_claim_name: iss
+      cookie_names: 
+        - access_token
+      header_names: [Authorization]
+      anonymous: ~
 
   - name: jwt
     route: inventory-stock
     config:
       claims_to_verify: [exp]
       key_claim_name: iss
-      cookie_names: []
+      cookie_names:
+        - access_token
       header_names: [Authorization]
       anonymous: ~
       # a new conf
@@ -355,62 +364,11 @@ plugins:
       key_claim_name: iss
       header_names:
         - Authorization
-      cookie_names: []
+      cookie_names:
+        - access_token
       anonymous: ~
   # ── JWT — order routes ────────────────
-#  - name: jwt
-#    route: order-create
-#    config:
-#      claims_to_verify: [exp]
-#      key_claim_name: iss
-#      cookie_names: []
-#      header_names: [Authorization]
-#      anonymous: ~
-#
-#  - name: jwt
-#    route: order-list
-#    config:
-#      claims_to_verify: [exp]
-#      key_claim_name: iss
-#      cookie_names: []
-#      header_names: [Authorization]
-#      anonymous: ~
-#
-#  - name: jwt
-#    route: order-item
-#    config:
-#      claims_to_verify: [exp]
-#      key_claim_name: iss
-#      cookie_names: []
-#      header_names: [Authorization]
-#      anonymous: ~
-#
-#  - name: jwt
-#    route: order-pay
-#    config:
-#      claims_to_verify: [exp]
-#      key_claim_name: iss
-#      cookie_names: []
-#      header_names: [Authorization]
-#      anonymous: ~
-#
-#  - name: jwt
-#    route: order-deliver
-#    config:
-#      claims_to_verify: [exp]
-#      key_claim_name: iss
-#      cookie_names: []
-#      header_names: [Authorization]
-#      anonymous: ~
-#
-#  - name: jwt
-#    route: order-cancel
-#    config:
-#      claims_to_verify: [exp]
-#      key_claim_name: iss
-#      cookie_names: []
-#      header_names: [Authorization]
-#      anonymous: ~
+      
   - name: prometheus
     config:
       status_code_metrics: true     # req count broken down by status code
