@@ -76,10 +76,10 @@ checkrouter.post('/', async (req: Request, res: Response) => {
   }
 });
 
-// @route   PUT /api/orders/:id/pay
+// @route   PATCH /api/orders/:id/pay
 // @desc    Mark order as paid
 // @access  Public
-checkrouter.put('/:id/pay', async (req: Request, res: Response) => {
+checkrouter.patch('/:id/pay', async (req: Request, res: Response) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) {
@@ -104,10 +104,10 @@ checkrouter.put('/:id/pay', async (req: Request, res: Response) => {
   }
 });
 
-// @route   PUT /api/orders/:id/deliver
+// @route   PATCH /api/orders/:id/deliver
 // @desc    Mark order as delivered
 // @access  Public (should be admin only in production)
-checkrouter.put('/:id/deliver', async (req: Request, res: Response) => {
+checkrouter.patch('/:id/deliver', async (req: Request, res: Response) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) {
@@ -126,10 +126,10 @@ checkrouter.put('/:id/deliver', async (req: Request, res: Response) => {
   }
 });
 
-// @route   PUT /api/orders/:id/cancel
+// @route   PATCH /api/orders/:id/cancel
 // @desc    Cancel an order
 // @access  Public
-checkrouter.put('/:id/cancel', async (req: Request, res: Response) => {
+checkrouter.patch('/:id/cancel', async (req: Request, res: Response) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) {

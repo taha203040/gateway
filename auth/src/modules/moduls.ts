@@ -28,6 +28,9 @@ const UserSchema: Schema = new Schema({
     type: String,
     required: true,
   },
+  iss:{
+      type: String
+  }
 });
 
 UserSchema.pre<IUser>('save', async function (next) {

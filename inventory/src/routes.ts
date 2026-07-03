@@ -43,15 +43,15 @@ router.get('/items/:id', async (req: Request, res: Response) => {
 // ── POST /items ─────────────────────────────────────────
 router.post('/items', async (req: Request, res: Response) => {
   // Admin check via Kong header
-  const role = req.headers['x-consumer-role'] as string | undefined
-  if (role !== 'admin') {
-    res.status(403).json({
-      success: false,
-      error: { code: 'FORBIDDEN', message: 'Admin access required' },
-    })
-    return
-  }
-
+//  const role = req.headers['x-consumer-role'] as string | undefined
+//  if (role !== 'admin') {
+//    res.status(403).json({
+//      success: false,
+//      error: { code: 'FORBIDDEN', message: 'Admin access required' },
+//    })
+//    return
+//  }
+//
   const { name, sku, price, stock, category } = req.body
 
   if (!name || !sku || price === undefined || stock === undefined || !category) {

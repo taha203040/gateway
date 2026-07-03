@@ -12,10 +12,12 @@ interface EnvConfig {
   REDIS_URI: string;
   ALLOW_ORIGINS: string[];
   LOG_LEVEL: string;
+  ISS:string;
 }
 
 function getEnvConfig(): EnvConfig {
   return {
+      ISS : process.env.ISS|| "",
     PORT: parseInt(process.env.PORT || '3000', 10),
     NODEENV: process.env.NODE_ENV || 'development',
     JWTSECRET: process.env.JWT_SECRET || 'default_jwt_secret',
