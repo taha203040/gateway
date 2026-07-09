@@ -18,3 +18,131 @@ A simple API gateway implementation.
 - npm or yarn
 
 ### Installation
+# Kong Konnect Data Plane on Windows (Docker Desktop)
+
+A guide to running Kong Gateway data plane on Windows using Docker Desktop, connected to Kong Konnect control plane.
+
+---
+
+## Prerequisites
+
+- Docker Desktop for Windows (Linux containers mode, WSL 2 backend)
+- PowerShell (5.1 or 7+)
+- Kong Konnect account with existing Control Plane
+- Outbound TCP 443 access to `*.konghq.com`
+
+---
+
+## Architecture
+
+```
+Windows Host (Docker Desktop/WSL2)
+  └─ kong-gateway (Linux container)
+       :8000 :8443 (proxy)
+         ▲
+         │ API traffic from clients
+         ▼
+  Outbound mTLS 443 → Konnect Control Plane
+         │
+         ▼ Telemetry → tp0.<region>.konghq.com
+```
+
+---
+
+## Step 1 — Generate Data Plane Certificates
+
+1. Login to **Konnect** → **Gateway Manager**
+2. Select your Control Plane → **Data Plane Nodes** → **New Data Plane Node**
+3. Choose **Docker** platform, **Linux** OS
+4. Copy the generated `docker run` command (contains your unique hostnames)
+
+---
+
+## Step 2 — Save Certificate Files
+
+```powershell
+New-Item -ItemType Directory -Force -Path C:\kong
+# Save generated certificate as C:\kong\cluster.crt
+# Save generated key as C:\kong\cluster.key
+
+# Verify files exist
+Get-ChildItem C:\kong
+```
+
+---
+
+## Step 3 — Run Data Plane Container
+
+Replace placeholders with values from your Konnect wizard:
+
+```powershell
+docker run -d --name kong-dp `
+  -e "KONG_ROLE=data_plane" `
+  -e "KONG_DATABASE=off" `
+  -e "KONG_VITALS=off" `
+  -e "KONG_CLUSTER_MTLS=pinned" `
+  -e "KONG_CLUSTER_CONTROL_PLANE=<YOUR_CP_ID>.<REGION>.cp0.konghq.com:443" `
+  -e "KONG_CLUSTER_SERVER_NAME=<YOUR_CP_ID>.<REGION>.cp0.konghq.com" `
+  -e "KONG_CLUSTER_TELEMETRY_ENDPOINT=<YOUR_CP_ID>.<REGION>.tp0.konghq.com:443" `
+  -e "KONG_CLUSTER_TELEMETRY_SERVER_NAME=<YOUR_CP_ID>.<REGION>.tp0.konghq.com" `
+  -e "KONG_CLUSTER_CERT=/etc/kong/cluster.crt" `
+  -e "KONG_CLUSTER_CERT_KEY=/etc/kong/cluster.key" `
+  -e "KONG_LUA_SSL_TRUSTED_CERTIFICATE=system" `
+  -e "KONG_KONNECT_MODE=on" `
+  -e "KONG_PROXY_ACCESS_LOG=/dev/stdout" `
+  -e "KONG_PROXY_ERROR_LOG=/dev/stderr" `
+  -v C:\kong:/etc/kong `
+  -p 8000:8000 `
+  -p 8443:8443 `
+  kong/kong-gateway:<KONG_GATEWAY_VERSION>
+```
+
+---
+
+## Step 4 — Verify
+
+```powershell
+# Check container is running
+docker ps --filter "name=kong-dp"
+
+# View logs for connection confirmation
+docker logs -f kong-dp
+
+# Test proxy (expect 404 - No route matched)
+curl.exe http://localhost:8000
+```
+
+Check Konnect UI: **Gateway Manager → Control Plane → Data Plane Nodes** → Status should show **Connected** (green).
+
+---
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| Volume mount errors | Add `C:\kong` to Docker Desktop → Settings → Resources → File Sharing |
+| Port conflicts | Check with `Get-NetTCPConnection -LocalPort 8000`, remap with `-p 18000:8000` |
+| Line continuation | Use backtick `` ` `` for PowerShell, caret `^` for cmd.exe |
+| WSL issues | Run `wsl --update` in elevated PowerShell |
+| TLS/Proxy errors | Whitelist `*.cp0.konghq.com` and `*.tp0.konghq.com` in corporate proxy |
+
+---
+
+## Key Environment Variables
+
+| Variable | Purpose |
+|----------|---------|
+| `KONG_ROLE=data_plane` | Run as data plane (no admin API) |
+| `KONG_DATABASE=off` | DB-less mode |
+| `KONG_CLUSTER_MTLS=pinned` | Use certificate authentication |
+| `KONG_CLUSTER_CONTROL_PLANE` | Konnect control plane endpoint |
+| `KONG_CLUSTER_TELEMETRY_ENDPOINT` | Konnect telemetry endpoint |
+| `KONG_KONNECT_MODE=on` | Enable Konnect integration |
+
+---
+
+## Next Steps
+
+- Configure routes and services via [decK](https://docs.konghq.com/deck/) or Konnect UI
+- Add plugins for authentication, rate limiting, etc.
+- Scale by running multiple data plane instances
