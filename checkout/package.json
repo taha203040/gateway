@@ -12,10 +12,12 @@
   "type": "commonjs",
   "description": "",
   "dependencies": {
+    "@types/k6": "^2.0.0",
     "bcrypt": "^6.0.0",
     "dotenv": "^17.4.2",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
+    "k6": "^0.0.0",
     "mongoose": "^9.5.0",
     "redis": "^6.0.0"
   },

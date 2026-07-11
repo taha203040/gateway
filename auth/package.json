@@ -27,5 +27,9 @@
   ],
   "types": "./lib/index.d.ts",
   "jsnext:main": "./es/index.js",
-  "module": "./es/index.js"
+  "module": "./es/index.js",
+  "dependencies": {
+    "@types/k6": "^2.0.0",
+    "k6": "^0.0.0"
+  }
 }
