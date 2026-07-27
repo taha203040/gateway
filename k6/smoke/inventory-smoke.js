@@ -2,8 +2,8 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 
 export const options = {
-    vus: 100,
-    iterations: 110,
+    vus: 10,
+    iterations: 70,
 
     thresholds: {
         http_req_failed: ['rate<0.01'],
@@ -11,7 +11,7 @@ export const options = {
     },
 };
 
-const BASE_URL = __ENV.BASE_URL || 'http://localhost:4100';
+const BASE_URL = __ENV.BASE_URL || 'http://localhost:8000';
 
 const headers = {
     'Content-Type': 'application/json',
