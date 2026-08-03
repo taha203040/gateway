@@ -2,7 +2,7 @@
 
 This repository contains a comprehensive Kong Gateway configuration for a microservices architecture with authentication, rate limiting, and monitoring capabilities.
 
-## 📋 Table of Contents
+## Table of Contents
 - [Overview](#overview)
 - [Architecture](#architecture)
 - [Services](#services)
