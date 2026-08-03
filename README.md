@@ -14,7 +14,7 @@ This repository contains a comprehensive Kong Gateway configuration for a micros
 - [Consumer Management](#consumer-management)
 - [Monitoring](#monitoring)
 
-## 🚀 Overview
+##  Overview
 
 This Kong Gateway configuration provides a unified entry point for multiple microservices with:
 - **JWT-based Authentication** for protected routes
