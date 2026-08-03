@@ -25,7 +25,7 @@ This Kong Gateway configuration provides a unified entry point for multiple micr
 - **Prometheus Metrics** for monitoring
 - **Correlation ID** for request tracing
 
-## 🏗️ Architecture
+##  Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -43,7 +43,7 @@ This Kong Gateway configuration provides a unified entry point for multiple micr
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## 📦 Services
+##  Services
 
 ### 1. Authentication Service (`auth-service`)
 **Base URL:** `http://host.docker.internal:3000`
@@ -78,7 +78,7 @@ This Kong Gateway configuration provides a unified entry point for multiple micr
 | `/api/orders/[^/]+/deliver$` | PATCH | JWT Protected | Deliver order |
 | `/api/orders/[^/]+/cancel$` | PATCH | JWT Protected | Cancel order |
 
-## 🔐 Authentication & Authorization
+##  Authentication & Authorization
 
 ### JWT Configuration
 All protected routes use JWT with the following configuration:
@@ -120,7 +120,7 @@ All protected routes use JWT with the following configuration:
 
 **Note:** The `inventory-client` consumer uses API Key authentication with key: `werttt2345cdfhgghfghfghf`
 
-## ⚡ Rate Limiting
+##  Rate Limiting
 
 | Consumer Tier | Requests/Minute | Policy |
 |---------------|----------------|--------|
@@ -130,7 +130,7 @@ All protected routes use JWT with the following configuration:
 
 Rate limiting is enforced via Redis backend for distributed consistency.
 
-## 🔌 Plugins
+##  Plugins
 
 ### Core Plugins
 
@@ -149,7 +149,7 @@ Rate limiting is enforced via Redis backend for distributed consistency.
 - **Request Transformer**: Injects `X-Consumer-Role: admin` for inventory endpoints
 - **Response Transformer**: Adds `X-Gateway: kong` and `X-API-Version: 1.0` headers
 
-## 🚦 Getting Started
+##  Getting Started
 
 ### Prerequisites
 - Docker & Docker Compose
@@ -208,7 +208,7 @@ curl -X PATCH http://localhost:8000/items/123/stock \
   -d '{"quantity": 50}'
 ```
 
-## 👥 Consumer Management
+##  Consumer Management
 
 ### Creating a Consumer
 ```bash
@@ -224,7 +224,7 @@ curl -X POST http://localhost:8001/consumers/{consumer}/jwt \
   -d '{"secret": "your-secret", "algorithm": "HS256"}'
 ```
 
-## 📊 Monitoring
+##  Monitoring
 
 ### Prometheus Metrics
 Access metrics at: `http://localhost:8001/metrics`
@@ -238,7 +238,7 @@ Available metrics:
 ### Correlation ID
 All requests receive a unique `X-Correlation-Id` header for end-to-end tracing.
 
-## 🔧 Common Issues & Troubleshooting
+##  Common Issues & Troubleshooting
 
 ### JWT Validation Failures
 - Ensure `iss` claim matches the consumer's `key`
@@ -255,11 +255,11 @@ All requests receive a unique `X-Correlation-Id` header for end-to-end tracing.
 - For key-auth routes, include `X-API-Key` header
 - Check if route is public or protected
 
-## 📝 License
+<!-- ## 📝 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the LICENSE file for details. -->
 
-## 🤝 Contributing
+##  Contributing
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
@@ -267,7 +267,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📞 Support
+##  Support
 
 For support, please:
 - Open an issue in the repository
